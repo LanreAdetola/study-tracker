@@ -1,21 +1,28 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">client</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+﻿@using Microsoft.AspNetCore.Components.Authorization
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill" aria-hidden="true"></span> Home
             </NavLink>
         </div>
-        
-    
+
+        <!-- Login/Logout Section -->
+        <div class="nav-item px-3">
+            <AuthorizeView>
+                <Authorized Context="authContext">
+                    <div class="nav-link mb-2">
+                        Hello, @authContext.User.Identity?.Name!
+                    </div>
+                    <a class="nav-link" href="/.auth/logout">Logout</a>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="nav-link" href="/.auth/login/github">Login with GitHub</a>
+                    <a class="nav-link" href="/.auth/login/aad">Login with Microsoft</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
     </nav>
 </div>
 
