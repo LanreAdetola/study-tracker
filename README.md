@@ -2,7 +2,10 @@
 # Study Tracker
 
 ## Phase 2 — Azure Setup & Authentication
-✅ **Completed**
+# Study Tracker
+
+## Phase 2 — Azure Setup & Authentication
+✅ **Completed** - API deployment testing
 
 ### Goals for Phase 2
 - Enable user authentication  
