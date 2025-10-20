@@ -21,7 +21,26 @@ public class AzureStaticWebAppsAuthenticationStateProvider : AuthenticationState
             
             if (userInfo?.ClientPrincipal != null)
             {
-                var claims = userInfo.ClientPrincipal.Claims.Select(c => new Claim(c.Type, c.Value));
+                var claims = new List<Claim>();
+                
+                // Add all claims from the response
+                foreach (var claim in userInfo.ClientPrincipal.Claims)
+                {
+                    claims.Add(new Claim(claim.Type, claim.Value));
+                }
+                
+                // Ensure we have a name claim for display
+                if (!claims.Any(c => c.Type == ClaimTypes.Name))
+                {
+                    // Try to find a name from GitHub claims
+                    var githubLogin = claims.FirstOrDefault(c => c.Type == "login")?.Value;
+                    var githubName = claims.FirstOrDefault(c => c.Type == "name")?.Value;
+                    var userDetails = userInfo.ClientPrincipal.UserDetails;
+                    
+                    var displayName = githubName ?? githubLogin ?? userDetails ?? "User";
+                    claims.Add(new Claim(ClaimTypes.Name, displayName));
+                }
+                
                 var identity = new ClaimsIdentity(claims, userInfo.ClientPrincipal.IdentityProvider);
                 var user = new ClaimsPrincipal(identity);
                 
