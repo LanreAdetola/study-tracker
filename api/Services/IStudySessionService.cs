@@ -1,4 +1,11 @@
+using System.Net;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Azure.Cosmos;
 using StudyTracker.Api.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace StudyTracker.Api.Services;
 
