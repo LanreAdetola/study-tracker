@@ -1,37 +1,4 @@
-@page "/"
-@using StudyTracker.Models
-@using StudyTracker.Services
-
-@code {
-    private List<StudySession> sessions = new();
-
-    protected override void OnInitialized()
-    {
-        var dataService = new DummyDataService();
-        sessions = dataService.GetSessions();
-    }
-}
-
-<h3>📘 My Study Sessions</h3>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Category</th>
-            <th>Hours</th>
-            <th>Notes</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var s in sessions)
-        {
-            <tr>
-                <td>@s.Date.ToShortDateString()</td>
-                <td>@s.Category</td>
-                <td>@s.Hours</td>
-                <td>@s.Notes</td>
-            </tr>
-        }
-    </tbody>
-</table>
+@* 
+    This file is no longer needed - Dashboard.razor now handles the "/" route 
+    Kept for reference but can be safely deleted
+*@
