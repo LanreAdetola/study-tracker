@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -5,21 +6,23 @@ using Microsoft.Azure.Cosmos;
 using StudyTracker.Api.Services;
 
 var host = new HostBuilder()
-    .ConfigureFunctionsWorkerDefaults()
+    .ConfigureFunctionsWebApplication()
     .ConfigureServices(services =>
     {
-        // Configure Cosmos DB client
+        // ✅ Add Application Insights
+        services.AddApplicationInsightsTelemetryWorkerService()
+                .ConfigureFunctionsApplicationInsights();
+
+        // ✅ Register CosmosClient
         services.AddSingleton<CosmosClient>(serviceProvider =>
         {
-            var connectionString = Environment.GetEnvironmentVariable("CosmosDBConnectionString");
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new InvalidOperationException("CosmosDBConnectionString environment variable is required");
-            }
-            return new CosmosClient(connectionString);
+            var config = serviceProvider.GetRequiredService<IConfiguration>();
+            string connStr = config["CosmosDBConnectionString"] 
+                ?? throw new InvalidOperationException("CosmosDBConnectionString configuration is required");
+            return new CosmosClient(connStr);
         });
-        
-        // Add study session service
+
+        // ✅ Register StudySession service
         services.AddScoped<IStudySessionService, StudySessionService>();
     })
     .Build();
