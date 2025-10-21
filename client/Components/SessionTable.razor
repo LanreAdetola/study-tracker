@@ -1,0 +1,40 @@
+@using client.Models
+@using client.Services
+@inject StudySessionService SessionService
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Hours</th>
+            <th>Notes</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var session in Sessions)
+        {
+            <tr>
+                <td>@session.Date.ToShortDateString()</td>
+                <td>@session.Category</td>
+                <td>@session.Hours</td>
+                <td>@session.Notes</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" @onclick="() => EditSession(session)">Edit</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public List<StudySession> Sessions { get; set; } = new();
+    [Parameter] public EventCallback OnSessionUpdated { get; set; }
+
+    private void EditSession(StudySession session)
+    {
+        // For now, simple alert. Later, can open SessionForm in edit mode
+        Console.WriteLine($"Editing session on {session.Date}");
+    }
+}

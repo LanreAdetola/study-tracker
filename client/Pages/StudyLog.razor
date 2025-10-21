@@ -1,0 +1,58 @@
+@page "/study-log"
+@inject StudySessionService SessionService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<AuthorizeView>
+    <Authorized>
+        <h3>📘 My Study Sessions</h3>
+
+        <SessionForm OnSessionAdded="ReloadSessions" />
+
+        @if (isLoading)
+        {
+            <div class="text-center mt-4">
+                <p>Loading sessions...</p>
+            </div>
+        }
+        else if (!sessions.Any())
+        {
+            <div class="alert alert-info mt-4">
+                <p>No study sessions found. Add your first session above!</p>
+            </div>
+        }
+        else
+        {
+            <SessionTable Sessions="sessions" OnSessionUpdated="ReloadSessions" />
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-warning mt-3">
+            <p>Please log in to manage your study sessions.</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<StudySession> sessions = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadSessions();
+    }
+
+    private async Task ReloadSessions()
+    {
+        isLoading = true;
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            sessions = await SessionService.GetUserSessionsAsync();
+        }
+        
+        isLoading = false;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,57 @@
+@page "/"
+@inject StudySessionService SessionService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<AuthorizeView>
+    <Authorized>
+        <h3>📊 Dashboard</h3>
+
+        <p>Welcome, @userName!</p>
+
+        <div class="stats-cards">
+            <div class="stat-card">
+                <h4>Total Study Sessions</h4>
+                <p class="stat-value">@totalSessions</p>
+            </div>
+            <div class="stat-card">
+                <h4>Total Hours Studied</h4>
+                <p class="stat-value">@totalHours.ToString("F1")</p>
+            </div>
+        </div>
+
+        <button class="btn btn-primary mt-3" @onclick="GoToStudyLog">Log a New Session</button>
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-info">
+            <h4>Welcome to Study Tracker!</h4>
+            <p>Please log in to view your study sessions and track your progress.</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private string userName = "User";
+    private int totalSessions = 0;
+    private double totalHours = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            userName = user.Identity.Name ?? "User";
+            
+            var sessions = await SessionService.GetUserSessionsAsync();
+            totalSessions = sessions.Count;
+            totalHours = sessions.Sum(s => s.Hours);
+        }
+    }
+
+    private void GoToStudyLog()
+    {
+        Navigation.NavigateTo("/study-log");
+    }
+}

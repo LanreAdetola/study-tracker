@@ -1,10 +1,13 @@
-namespace StudyTracker.Models
+namespace client.Models
 {
     public class StudySession
     {
-        public required string Category { get; set; }
-        public required double Hours { get; set; }
-        public required string Notes { get; set; }
-        public required DateTime Date { get; set; }
+        public string Id { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public double Hours { get; set; }
+        public string? Notes { get; set; }
+        public DateTime Date { get; set; } = DateTime.Today;
     }
 }
