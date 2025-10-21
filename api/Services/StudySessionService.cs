@@ -17,8 +17,8 @@ public class StudySessionService : IStudySessionService
 
     public StudySessionService(CosmosClient cosmosClient)
     {
-        _databaseName = Environment.GetEnvironmentVariable("CosmosDBDatabaseName") ?? "StudyTrackerDB";
-        _containerName = Environment.GetEnvironmentVariable("CosmosDBContainerName") ?? "StudySessions";
+        _databaseName = Environment.GetEnvironmentVariable("CosmosDBDatabaseName") ?? "study-tracker";
+        _containerName = Environment.GetEnvironmentVariable("CosmosDBContainerName") ?? "sessions";
         _container = cosmosClient.GetContainer(_databaseName, _containerName);
     }
 

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using StudyTracker.Api.Models;
 using StudyTracker.Api.Services;
 using System.Net;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace StudyTracker.Api.Functions;
 
@@ -88,10 +88,7 @@ public class StudySessionFunctions
             }
 
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var session = JsonSerializer.Deserialize<StudySession>(requestBody, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var session = JsonConvert.DeserializeObject<StudySession>(requestBody);
 
             if (session == null)
             {
@@ -128,10 +125,7 @@ public class StudySessionFunctions
             }
 
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var session = JsonSerializer.Deserialize<StudySession>(requestBody, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var session = JsonConvert.DeserializeObject<StudySession>(requestBody);
 
             if (session == null)
             {
