@@ -419,3 +419,4 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# Trigger deployment with new API token
