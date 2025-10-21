@@ -1,30 +1,33 @@
-using System.Text.Json.Serialization;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 namespace StudyTracker.Api.Models;
 
 public class StudySession
 {
-    [JsonPropertyName("id")]
+    [JsonProperty("id")]
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
-    [JsonPropertyName("userId")]
+    [JsonProperty("userId")]
     public string UserId { get; set; } = string.Empty;
     
-    [JsonPropertyName("category")]
+    [JsonProperty("category")]
     public string Category { get; set; } = string.Empty;
     
-    [JsonPropertyName("hours")]
+    [JsonProperty("hours")]
     public double Hours { get; set; }
     
-    [JsonPropertyName("notes")]
+    [JsonProperty("notes")]
     public string Notes { get; set; } = string.Empty;
     
-    [JsonPropertyName("date")]
+    [JsonProperty("date")]
     public DateTime Date { get; set; }
     
-    [JsonPropertyName("createdAt")]
+    [JsonProperty("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
-    [JsonPropertyName("updatedAt")]
+    [JsonProperty("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
