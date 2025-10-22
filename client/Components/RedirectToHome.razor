@@ -1,0 +1,9 @@
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Redirect to home page for unauthenticated users trying to access protected routes
+        Navigation.NavigateTo("/", forceLoad: false);
+    }
+}
