@@ -85,7 +85,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        activeGoals = await GoalService.GetActiveGoalsAsync();
+        try
+        {
+            activeGoals = await GoalService.GetActiveGoalsAsync();
+        }
+        catch (Exception)
+        {
+            // If goals fail to load, just use empty list and show text input
+            activeGoals = new List<StudyGoal>();
+        }
     }
 
     protected override void OnParametersSet()

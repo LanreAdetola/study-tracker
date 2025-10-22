@@ -18,6 +18,6 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, AzureStaticWebAppsAuthenticationStateProvider>();
 
 builder.Services.AddScoped<StudySessionService>();
-
+builder.Services.AddScoped<StudyGoalService>();
 
 await builder.Build().RunAsync();
