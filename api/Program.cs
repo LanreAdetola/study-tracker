@@ -24,6 +24,9 @@ var host = new HostBuilder()
 
         // ✅ Register StudySession service
         services.AddScoped<IStudySessionService, StudySessionService>();
+        
+        // ✅ Register StudyGoal service
+        services.AddScoped<IStudyGoalService, StudyGoalService>();
     })
     .Build();
 

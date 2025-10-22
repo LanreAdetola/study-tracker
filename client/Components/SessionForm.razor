@@ -1,6 +1,7 @@
 @using client.Models
 @using client.Services
 @inject StudySessionService SessionService
+@inject StudyGoalService GoalService
 
 <div class="card mb-4">
     <div class="card-body">
@@ -11,7 +12,29 @@
 
             <div class="mb-3">
                 <label class="form-label">Category</label>
-                <InputText class="form-control" @bind-Value="currentSession.Category" />
+                <div class="input-group">
+                    @if (activeGoals.Any())
+                    {
+                        <InputSelect class="form-select" @bind-Value="currentSession.Category">
+                            <option value="">-- Select from goals or type custom --</option>
+                            @foreach (var goal in activeGoals)
+                            {
+                                <option value="@goal.Name">@goal.Name (@goal.Type)</option>
+                            }
+                        </InputSelect>
+                        <button class="btn btn-outline-secondary" type="button" @onclick="ToggleCustomCategory">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    }
+                    else
+                    {
+                        <InputText class="form-control" @bind-Value="currentSession.Category" placeholder="Enter category" />
+                    }
+                </div>
+                @if (showCustomCategory)
+                {
+                    <InputText class="form-control mt-2" @bind-Value="currentSession.Category" placeholder="Enter custom category" />
+                }
                 <ValidationMessage For="() => currentSession.Category" />
             </div>
 
@@ -56,7 +79,14 @@
     public EventCallback OnEditCancelled { get; set; }
 
     private StudySession currentSession = new() { Date = DateTime.Today };
+    private List<StudyGoal> activeGoals = new();
     private bool IsEditMode => SessionToEdit != null;
+    private bool showCustomCategory = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activeGoals = await GoalService.GetActiveGoalsAsync();
+    }
 
     protected override void OnParametersSet()
     {
@@ -78,6 +108,16 @@
         {
             currentSession = new() { Date = DateTime.Today };
         }
+        showCustomCategory = false;
+    }
+
+    private void ToggleCustomCategory()
+    {
+        showCustomCategory = !showCustomCategory;
+        if (showCustomCategory)
+        {
+            currentSession.Category = string.Empty;
+        }
     }
 
     private async Task HandleSubmit()
@@ -96,6 +136,7 @@
         if (success)
         {
             currentSession = new() { Date = DateTime.Today };
+            showCustomCategory = false;
             await OnSessionAdded.InvokeAsync();
         }
     }
@@ -103,6 +144,7 @@
     private async Task CancelEdit()
     {
         currentSession = new() { Date = DateTime.Today };
+        showCustomCategory = false;
         await OnEditCancelled.InvokeAsync();
     }
 }
