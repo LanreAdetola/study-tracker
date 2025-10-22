@@ -1,0 +1,53 @@
+@using client.Models
+@using client.Services
+@inject StudySessionService SessionService
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Add New Study Session</h5>
+        <EditForm Model="newSession" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Category</label>
+                <InputText class="form-control" @bind-Value="newSession.Category" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Hours</label>
+                <InputNumber class="form-control" @bind-Value="newSession.Hours" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Date</label>
+                <InputDate class="form-control" @bind-Value="newSession.Date" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Notes (optional)</label>
+                <InputTextArea class="form-control" @bind-Value="newSession.Notes" rows="3" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Add Session</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnSessionAdded { get; set; }
+
+    private StudySession newSession = new() { Date = DateTime.Today };
+
+    private async Task HandleSubmit()
+    {
+        var success = await SessionService.AddSessionAsync(newSession);
+        
+        if (success)
+        {
+            newSession = new() { Date = DateTime.Today };
+            await OnSessionAdded.InvokeAsync();
+        }
+    }
+}
