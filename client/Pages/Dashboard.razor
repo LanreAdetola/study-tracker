@@ -1,7 +1,6 @@
 @page "/"
 @inject StudySessionService SessionService
 @inject AuthenticationStateProvider AuthStateProvider
-@inject NavigationManager Navigation
 
 <AuthorizeView>
     <Authorized>
@@ -19,8 +18,6 @@
                 <p class="stat-value">@totalHours.ToString("F1")</p>
             </div>
         </div>
-
-        <button class="btn btn-primary mt-3" @onclick="GoToStudyLog">Log a New Session</button>
     </Authorized>
     <NotAuthorized>
         <div class="alert alert-info">
@@ -48,10 +45,5 @@
             totalSessions = sessions.Count;
             totalHours = sessions.Sum(s => s.Hours);
         }
-    }
-
-    private void GoToStudyLog()
-    {
-        Navigation.NavigateTo("/study-log");
     }
 }
