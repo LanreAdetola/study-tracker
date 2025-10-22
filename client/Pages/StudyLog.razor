@@ -1,40 +1,63 @@
 @page "/study-log"
-@inject StudySessionService SessionService
-@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
+@using client.Models
+@using client.Components
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 <AuthorizeView>
     <Authorized>
-        <h3>📘 My Study Sessions</h3>
-
-        <SessionForm OnSessionAdded="ReloadSessions" />
-
-        @if (isLoading)
-        {
-            <div class="text-center mt-4">
-                <p>Loading sessions...</p>
+        <div class="container mt-4">
+            <h2>Study Log</h2>
+            <p class="text-muted">Track your study sessions and progress over time</p>
+            
+            <div class="row">
+                <div class="col-md-5 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <SessionForm 
+                                OnSessionAdded="ReloadSessions"
+                                SessionToEdit="selectedSession"
+                                OnEditCancelled="CancelEdit" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h4 class="card-title mb-3">Your Study History</h4>
+                            @if (sessions == null)
+                            {
+                                <p><em>Loading sessions...</em></p>
+                            }
+                            else if (!sessions.Any())
+                            {
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> No study sessions yet. Add your first session to get started!
+                                </div>
+                            }
+                            else
+                            {
+                                <SessionTable 
+                                    Sessions="sessions" 
+                                    OnSessionUpdated="ReloadSessions"
+                                    OnEditSession="HandleEditSession" />
+                            }
+                        </div>
+                    </div>
+                </div>
             </div>
-        }
-        else if (!sessions.Any())
-        {
-            <div class="alert alert-info mt-4">
-                <p>No study sessions found. Add your first session above!</p>
-            </div>
-        }
-        else
-        {
-            <SessionTable Sessions="sessions" OnSessionUpdated="ReloadSessions" />
-        }
+        </div>
     </Authorized>
     <NotAuthorized>
-        <div class="alert alert-warning mt-3">
-            <p>Please log in to manage your study sessions.</p>
-        </div>
+        <p>You need to be logged in to access this page.</p>
     </NotAuthorized>
 </AuthorizeView>
 
 @code {
-    private List<StudySession> sessions = new();
-    private bool isLoading = true;
+    [Inject] private StudySessionService SessionService { get; set; } = default!;
+    
+    private List<StudySession>? sessions;
+    private StudySession? selectedSession;
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,16 +66,19 @@
 
     private async Task ReloadSessions()
     {
-        isLoading = true;
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        selectedSession = null; // Clear selection when reloading
+        sessions = await SessionService.GetUserSessionsAsync();
+    }
 
-        if (user.Identity?.IsAuthenticated ?? false)
-        {
-            sessions = await SessionService.GetUserSessionsAsync();
-        }
-        
-        isLoading = false;
+    private void HandleEditSession(StudySession session)
+    {
+        selectedSession = session;
         StateHasChanged();
+    }
+
+    private async Task CancelEdit()
+    {
+        selectedSession = null;
+        await InvokeAsync(StateHasChanged);
     }
 }

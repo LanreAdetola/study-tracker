@@ -70,5 +70,55 @@ namespace client.Services
                 return false;
             }
         }
+
+        /// <summary>
+        /// Updates an existing study session
+        /// </summary>
+        public async Task<bool> UpdateSessionAsync(StudySession session)
+        {
+            try
+            {
+                var authState = await _authStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+
+                if (!user.Identity?.IsAuthenticated ?? true)
+                {
+                    return false;
+                }
+
+                var response = await _httpClient.PutAsJsonAsync($"/api/sessions/{session.Id}", session);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating session: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Deletes a study session
+        /// </summary>
+        public async Task<bool> DeleteSessionAsync(string sessionId)
+        {
+            try
+            {
+                var authState = await _authStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+
+                if (!user.Identity?.IsAuthenticated ?? true)
+                {
+                    return false;
+                }
+
+                var response = await _httpClient.DeleteAsync($"/api/sessions/{sessionId}");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting session: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

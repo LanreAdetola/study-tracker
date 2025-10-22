@@ -4,32 +4,43 @@
 
 <div class="card mb-4">
     <div class="card-body">
-        <h5 class="card-title">Add New Study Session</h5>
-        <EditForm Model="newSession" OnValidSubmit="HandleSubmit">
+        <h5 class="card-title">@(IsEditMode ? "Edit Study Session" : "Add New Study Session")</h5>
+        <EditForm Model="currentSession" OnValidSubmit="HandleSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
             <div class="mb-3">
                 <label class="form-label">Category</label>
-                <InputText class="form-control" @bind-Value="newSession.Category" />
+                <InputText class="form-control" @bind-Value="currentSession.Category" />
+                <ValidationMessage For="() => currentSession.Category" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Hours</label>
-                <InputNumber class="form-control" @bind-Value="newSession.Hours" />
+                <InputNumber class="form-control" @bind-Value="currentSession.Hours" />
+                <ValidationMessage For="() => currentSession.Hours" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Date</label>
-                <InputDate class="form-control" @bind-Value="newSession.Date" />
+                <InputDate class="form-control" @bind-Value="currentSession.Date" />
+                <ValidationMessage For="() => currentSession.Date" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Notes (optional)</label>
-                <InputTextArea class="form-control" @bind-Value="newSession.Notes" rows="3" />
+                <InputTextArea class="form-control" @bind-Value="currentSession.Notes" rows="3" />
             </div>
 
-            <button type="submit" class="btn btn-primary">Add Session</button>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    @(IsEditMode ? "Update Session" : "Add Session")
+                </button>
+                @if (IsEditMode)
+                {
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+                }
+            </div>
         </EditForm>
     </div>
 </div>
@@ -38,16 +49,60 @@
     [Parameter]
     public EventCallback OnSessionAdded { get; set; }
 
-    private StudySession newSession = new() { Date = DateTime.Today };
+    [Parameter]
+    public StudySession? SessionToEdit { get; set; }
+
+    [Parameter]
+    public EventCallback OnEditCancelled { get; set; }
+
+    private StudySession currentSession = new() { Date = DateTime.Today };
+    private bool IsEditMode => SessionToEdit != null;
+
+    protected override void OnParametersSet()
+    {
+        if (SessionToEdit != null)
+        {
+            // Create a copy for editing
+            currentSession = new StudySession
+            {
+                Id = SessionToEdit.Id,
+                UserId = SessionToEdit.UserId,
+                UserName = SessionToEdit.UserName,
+                Category = SessionToEdit.Category,
+                Hours = SessionToEdit.Hours,
+                Date = SessionToEdit.Date,
+                Notes = SessionToEdit.Notes
+            };
+        }
+        else
+        {
+            currentSession = new() { Date = DateTime.Today };
+        }
+    }
 
     private async Task HandleSubmit()
     {
-        var success = await SessionService.AddSessionAsync(newSession);
+        bool success;
+        
+        if (IsEditMode)
+        {
+            success = await SessionService.UpdateSessionAsync(currentSession);
+        }
+        else
+        {
+            success = await SessionService.AddSessionAsync(currentSession);
+        }
         
         if (success)
         {
-            newSession = new() { Date = DateTime.Today };
+            currentSession = new() { Date = DateTime.Today };
             await OnSessionAdded.InvokeAsync();
         }
+    }
+
+    private async Task CancelEdit()
+    {
+        currentSession = new() { Date = DateTime.Today };
+        await OnEditCancelled.InvokeAsync();
     }
 }

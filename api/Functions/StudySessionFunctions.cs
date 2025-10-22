@@ -95,6 +95,16 @@ public class StudySessionFunctions
                 return await CreateErrorResponse(req, HttpStatusCode.BadRequest, "Invalid session data");
             }
 
+            // Server-side validation
+            var validationErrors = new List<string>();
+            if (string.IsNullOrWhiteSpace(session.Category)) validationErrors.Add("Category is required");
+            if (session.Hours <= 0) validationErrors.Add("Hours must be greater than zero");
+            if (session.Date.Date > DateTime.UtcNow.Date) validationErrors.Add("Date cannot be in the future");
+            if (validationErrors.Any())
+            {
+                return await CreateErrorResponse(req, HttpStatusCode.BadRequest, string.Join("; ", validationErrors));
+            }
+
             session.UserId = userId;
             var createdSession = await _studySessionService.CreateSessionAsync(session);
             
@@ -130,6 +140,16 @@ public class StudySessionFunctions
             if (session == null)
             {
                 return await CreateErrorResponse(req, HttpStatusCode.BadRequest, "Invalid session data");
+            }
+
+            // Server-side validation for updates
+            var updateErrors = new List<string>();
+            if (string.IsNullOrWhiteSpace(session.Category)) updateErrors.Add("Category is required");
+            if (session.Hours <= 0) updateErrors.Add("Hours must be greater than zero");
+            if (session.Date.Date > DateTime.UtcNow.Date) updateErrors.Add("Date cannot be in the future");
+            if (updateErrors.Any())
+            {
+                return await CreateErrorResponse(req, HttpStatusCode.BadRequest, string.Join("; ", updateErrors));
             }
 
             session.UserId = userId;
