@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
+@using client.Components
 
 <div class="page">
     <div class="sidebar">
@@ -19,6 +20,7 @@
         </div>
 
         <article class="content px-4">
+            <UserRegistration />
             @Body
         </article>
     </main>

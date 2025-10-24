@@ -1,5 +1,7 @@
 @page "/"
+@using client.Services
 @inject StudySessionService SessionService
+@inject UserService UserService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <AuthorizeView>
@@ -25,6 +27,20 @@
                 <h1 class="hero-title">📚 Study Tracker</h1>
                 <p class="hero-tagline">Track your study progress and achieve your goals</p>
                 
+                @if (userCount != null)
+                {
+                    <p class="user-count">
+                        @if (userCount.CanRegister)
+                        {
+                            <span class="badge bg-success">Join @userCount.Count/@userCount.MaxUsers students using Study Tracker!</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">@userCount.Count/@userCount.MaxUsers spots filled - App at capacity</span>
+                        }
+                    </p>
+                }
+                
                 <div class="feature-cards">
                     <div class="feature-card">
                         <div class="feature-icon">🎯</div>
@@ -44,9 +60,25 @@
                 </div>
 
                 <div class="cta-section">
-                    <a href="/.auth/login/github" class="btn btn-primary btn-lg">
-                        <i class="bi bi-github"></i> Login with GitHub
-                    </a>
+                    @if (userCount?.CanRegister == true)
+                    {
+                        <a href="/.auth/login/github" class="btn btn-primary btn-lg">
+                            <i class="bi bi-github"></i> Login with GitHub
+                        </a>
+                    }
+                    else if (userCount?.CanRegister == false)
+                    {
+                        <button class="btn btn-secondary btn-lg" disabled>
+                            <i class="bi bi-lock"></i> App at Capacity
+                        </button>
+                        <p class="text-muted mt-2">We're currently at our 50-user limit. Please check back later!</p>
+                    }
+                    else
+                    {
+                        <a href="/.auth/login/github" class="btn btn-primary btn-lg">
+                            <i class="bi bi-github"></i> Login with GitHub
+                        </a>
+                    }
                     <p class="tech-badge">Built with Blazor WebAssembly 🚀</p>
                 </div>
             </div>
@@ -58,6 +90,7 @@
     private string userName = "User";
     private int totalSessions = 0;
     private double totalHours = 0;
+    private UserCountResponse? userCount = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -71,6 +104,11 @@
             var sessions = await SessionService.GetUserSessionsAsync();
             totalSessions = sessions.Count;
             totalHours = sessions.Sum(s => s.Hours);
+        }
+        else
+        {
+            // Load user count for landing page
+            userCount = await UserService.GetUserCountAsync();
         }
     }
 }

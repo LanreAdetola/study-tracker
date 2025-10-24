@@ -134,7 +134,17 @@ code {
 .hero-tagline {
     font-size: 1.5rem;
     color: #6c757d;
+    margin-bottom: 1.5rem;
+}
+
+.user-count {
+    font-size: 1.1rem;
     margin-bottom: 3rem;
+}
+
+.user-count .badge {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
 }
 
 /* Feature Cards */

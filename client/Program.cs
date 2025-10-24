@@ -19,5 +19,6 @@ builder.Services.AddScoped<AuthenticationStateProvider, AzureStaticWebAppsAuthen
 
 builder.Services.AddScoped<StudySessionService>();
 builder.Services.AddScoped<StudyGoalService>();
+builder.Services.AddScoped<UserService>();
 
 await builder.Build().RunAsync();
