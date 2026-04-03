@@ -26,60 +26,61 @@
             <div class="hero-content">
                 <h1 class="hero-title">📚 Study Tracker</h1>
                 <p class="hero-tagline">Track your study progress and achieve your goals</p>
-                
+
                 @if (userCount != null)
                 {
                     <p class="user-count">
                         @if (userCount.CanRegister)
                         {
-                            <span class="badge bg-success">Join @userCount.Count/@userCount.MaxUsers students using Study Tracker!</span>
+                            <span class="badge bg-success">@userCount.Count/@userCount.MaxUsers students joined</span>
                         }
                         else
                         {
-                            <span class="badge bg-warning text-dark">@userCount.Count/@userCount.MaxUsers spots filled - App at capacity</span>
+                            <span class="badge bg-warning text-dark">@userCount.Count/@userCount.MaxUsers spots filled</span>
                         }
                     </p>
                 }
-                
-                <div class="feature-cards">
-                    <div class="feature-card">
-                        <div class="feature-icon">🎯</div>
-                        <h3>Set Goals</h3>
-                        <p>Create study goals for subjects and certifications</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">📝</div>
-                        <h3>Log Sessions</h3>
-                        <p>Track your study hours and progress</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">📊</div>
-                        <h3>Monitor Progress</h3>
-                        <p>View your achievements and stay motivated</p>
-                    </div>
-                </div>
 
                 <div class="cta-section">
                     @if (userCount?.CanRegister == false)
                     {
-                        <button class="btn btn-secondary btn-lg" disabled>
-                            <i class="bi bi-lock"></i> App at Capacity
-                        </button>
-                        <p class="text-muted mt-2">We're currently at our 50-user limit. Please check back later!</p>
+                        <button class="btn btn-secondary btn-lg" disabled>App at Capacity</button>
+                        <p class="text-muted mt-2">We're at our 50-user limit. Check back later!</p>
                     }
                     else
                     {
                         <div class="login-options">
-                            <a href="/.auth/login/github" class="btn btn-dark btn-lg">
-                                <i class="bi bi-github"></i> Login with GitHub
-                            </a>
-                            <a href="/.auth/login/aad" class="btn btn-primary btn-lg">
-                                <i class="bi bi-microsoft"></i> Login with Microsoft
-                            </a>
+                            <a href="/.auth/login/github" class="btn btn-dark btn-lg">Login with GitHub</a>
+                            <a href="/.auth/login/aad" class="btn btn-primary btn-lg">Login with Microsoft</a>
                         </div>
                     }
-                    <p class="tech-badge">Built with Blazor WebAssembly 🚀</p>
                 </div>
+
+                <div class="feature-cards">
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <div>
+                            <h3>Set Goals</h3>
+                            <p>Create study goals for subjects and certifications</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📝</div>
+                        <div>
+                            <h3>Log Sessions</h3>
+                            <p>Track your study hours and progress</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <div>
+                            <h3>Monitor Progress</h3>
+                            <p>View your achievements and stay motivated</p>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="tech-badge">Built with Blazor WebAssembly 🚀</p>
             </div>
         </div>
     </NotAuthorized>
