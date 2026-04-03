@@ -76,17 +76,11 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <!-- Desktop: icon-only buttons -->
                                                 <div class="btn-group btn-group-sm ms-3 d-none d-md-flex" role="group">
-                                                    <button class="btn btn-outline-primary" @onclick="() => HandleEditGoal(goal)" title="Edit">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-danger" @onclick="() => HandleDelete(goal)" title="Delete">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
+                                                    <button class="btn btn-outline-primary" @onclick="() => HandleEditGoal(goal)">Edit</button>
+                                                    <button class="btn btn-outline-danger" @onclick="() => HandleDelete(goal)">Delete</button>
                                                 </div>
                                             </div>
-                                            <!-- Mobile: labeled buttons below content -->
                                             <div class="d-flex d-md-none gap-2 mt-2">
                                                 <button class="btn btn-outline-primary btn-mobile" @onclick="() => HandleEditGoal(goal)">Edit</button>
                                                 <button class="btn btn-outline-danger btn-mobile" @onclick="() => HandleDelete(goal)">Delete</button>
