@@ -63,20 +63,21 @@
                                                     </p>
                                                     <div class="progress mb-2" style="height: 20px;">
                                                         @{
-                                                            var progressPercent = goal.TargetHours > 0 
-                                                                ? Math.Min((goal.CurrentHours / goal.TargetHours) * 100, 100) 
+                                                            var progressPercent = goal.TargetHours > 0
+                                                                ? Math.Min((goal.CurrentHours / goal.TargetHours) * 100, 100)
                                                                 : 0;
                                                         }
-                                                        <div class="progress-bar" role="progressbar" 
-                                                             style="width: @(progressPercent)%;" 
-                                                             aria-valuenow="@progressPercent" 
-                                                             aria-valuemin="0" 
+                                                        <div class="progress-bar" role="progressbar"
+                                                             style="width: @(progressPercent)%;"
+                                                             aria-valuenow="@progressPercent"
+                                                             aria-valuemin="0"
                                                              aria-valuemax="100">
                                                             @goal.CurrentHours.ToString("F1") / @goal.TargetHours hours (@progressPercent.ToString("F0")%)
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="btn-group btn-group-sm ms-3" role="group">
+                                                <!-- Desktop: icon-only buttons -->
+                                                <div class="btn-group btn-group-sm ms-3 d-none d-md-flex" role="group">
                                                     <button class="btn btn-outline-primary" @onclick="() => HandleEditGoal(goal)" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </button>
@@ -84,6 +85,11 @@
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </div>
+                                            </div>
+                                            <!-- Mobile: labeled buttons below content -->
+                                            <div class="d-flex d-md-none gap-2 mt-2">
+                                                <button class="btn btn-outline-primary btn-mobile" @onclick="() => HandleEditGoal(goal)">Edit</button>
+                                                <button class="btn btn-outline-danger btn-mobile" @onclick="() => HandleDelete(goal)">Delete</button>
                                             </div>
                                         </div>
                                     }
