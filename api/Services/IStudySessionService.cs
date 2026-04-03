@@ -16,4 +16,5 @@ public interface IStudySessionService
     Task<StudySession> CreateSessionAsync(StudySession session);
     Task<StudySession?> UpdateSessionAsync(string id, StudySession session);
     Task<bool> DeleteSessionAsync(string id, string userId);
+    Task<StudySessionStats> GetStatsAsync(string userId, DateTime? from, DateTime? to);
 }

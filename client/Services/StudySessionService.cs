@@ -96,6 +96,27 @@ namespace client.Services
             }
         }
 
+        public async Task<StudySessionStats?> GetStatsAsync()
+        {
+            try
+            {
+                var authState = await _authStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+
+                if (!user.Identity?.IsAuthenticated ?? true)
+                {
+                    return null;
+                }
+
+                return await _httpClient.GetFromJsonAsync<StudySessionStats>("/api/sessions/stats");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching stats: {ex.Message}");
+                return null;
+            }
+        }
+
         /// <summary>
         /// Deletes a study session
         /// </summary>

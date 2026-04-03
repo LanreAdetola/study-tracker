@@ -1,0 +1,198 @@
+@page "/analytics"
+@using Microsoft.AspNetCore.Components.Authorization
+@using client.Models
+@using client.Services
+@inject StudySessionService SessionService
+@inject StudyGoalService GoalService
+@inject IJSRuntime JS
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<PageTitle>Analytics - Study Tracker</PageTitle>
+
+<h3 class="mb-4">Analytics</h3>
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading your analytics...</p>
+    </div>
+}
+else if (stats == null || stats.TotalSessions == 0)
+{
+    <!-- Empty State -->
+    <div class="empty-state text-center py-5">
+        <div class="empty-state-icon mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#6c757d" viewBox="0 0 16 16">
+                <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5h-2v12h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z"/>
+            </svg>
+        </div>
+        <h4>No study sessions yet</h4>
+        <p class="text-muted mb-3">Start logging sessions to see your study analytics here.</p>
+        <a href="study-log" class="btn btn-primary">Log your first session</a>
+    </div>
+}
+else
+{
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Sessions</h6>
+                    <h2 class="card-title mb-0">@stats.TotalSessions</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Hours</h6>
+                    <h2 class="card-title mb-0">@stats.TotalHours.ToString("F1")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <h6 class="card-subtitle mb-2 text-muted">Avg Hours/Day</h6>
+                    <h2 class="card-title mb-0">@stats.AverageHoursPerDay.ToString("F1")</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Study Hours Bar Chart -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Daily Study Hours (Last 30 Days)</h5>
+            <div class="chart-container">
+                <canvas id="dailyHoursChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Breakdown Donut Chart -->
+    @if (stats.HoursByCategory.Any())
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Study Time by Category</h5>
+                <div class="chart-container chart-container-sm">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Goal Progress Line Chart -->
+    @if (goalDatasets.Any())
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Goal Progress</h5>
+                <div class="chart-container">
+                    <canvas id="goalProgressChart"></canvas>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private StudySessionStats? stats;
+    private List<GoalProgressDataset> goalDatasets = new();
+    private bool isLoading = true;
+    private bool chartsRendered = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            stats = await SessionService.GetStatsAsync();
+
+            if (stats != null && stats.TotalSessions > 0)
+            {
+                await ComputeGoalProgress();
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!isLoading && stats != null && stats.TotalSessions > 0 && !chartsRendered)
+        {
+            chartsRendered = true;
+            await RenderCharts();
+        }
+    }
+
+    private async Task RenderCharts()
+    {
+        // Bar chart: daily hours
+        if (stats!.DailyBreakdown.Any())
+        {
+            var labels = stats.DailyBreakdown.Select(d => d.Date.ToString("MMM dd")).ToArray();
+            var data = stats.DailyBreakdown.Select(d => d.Hours).ToArray();
+            await JS.InvokeVoidAsync("renderBarChart", "dailyHoursChart", labels, data, "Hours Studied");
+        }
+
+        // Donut chart: category breakdown
+        if (stats.HoursByCategory.Any())
+        {
+            var catLabels = stats.HoursByCategory.Keys.ToArray();
+            var catData = stats.HoursByCategory.Values.ToArray();
+            await JS.InvokeVoidAsync("renderDonutChart", "categoryChart", catLabels, catData);
+        }
+
+        // Line chart: goal progress
+        if (goalDatasets.Any())
+        {
+            await JS.InvokeVoidAsync("renderLineChart", "goalProgressChart", goalDatasets);
+        }
+    }
+
+    private async Task ComputeGoalProgress()
+    {
+        var activeGoals = await GoalService.GetActiveGoalsAsync();
+        if (!activeGoals.Any()) return;
+
+        var sessions = await SessionService.GetUserSessionsAsync();
+        if (!sessions.Any()) return;
+
+        foreach (var goal in activeGoals)
+        {
+            var goalSessions = sessions
+                .Where(s => string.Equals(s.Category, goal.Name, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(s => s.Date)
+                .ToList();
+
+            if (!goalSessions.Any()) continue;
+
+            double cumulative = 0;
+            var points = new List<GoalProgressPoint>();
+            foreach (var session in goalSessions)
+            {
+                cumulative += session.Hours;
+                points.Add(new GoalProgressPoint
+                {
+                    Date = session.Date.ToString("MMM dd"),
+                    CumulativeHours = Math.Round(cumulative, 1)
+                });
+            }
+
+            goalDatasets.Add(new GoalProgressDataset
+            {
+                GoalName = goal.Name,
+                TargetHours = goal.TargetHours,
+                Points = points
+            });
+        }
+    }
+}
