@@ -10,7 +10,7 @@ A full-stack study tracking web application built with Blazor WebAssembly and Az
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | Blazor WebAssembly (.NET 9.0), Bootstrap |
+| Frontend | Blazor WebAssembly (.NET 9.0), Bootstrap 5, Chart.js v4 |
 | Backend | Azure Functions v4 (.NET 8.0, isolated worker) |
 | Database | Azure Cosmos DB (NoSQL) |
 | Authentication | GitHub OAuth via Azure Static Web Apps |
@@ -43,11 +43,28 @@ A full-stack study tracking web application built with Blazor WebAssembly and Az
 - 50-user capacity limit with live counter on the landing page
 - Per-user data isolation enforced at the API level
 
+### Analytics
+
+- Daily study hours bar chart (last 30 days)
+- Category breakdown donut chart
+- Goal progress line chart with target reference lines
+- Summary stats: total sessions, total hours, average hours/day
+- Designed empty state with call-to-action for new users
+- Powered by Chart.js via JavaScript interop
+
 ### Dashboard
 
 - Personalized greeting for authenticated users
 - Summary stats: total study sessions and total hours logged
 - Hero landing page with feature overview for new visitors
+
+### Mobile Optimization
+
+- Session table switches to card layout on small screens
+- Touch-friendly buttons (44px min-height) across all pages
+- Full-screen modals on mobile for confirmations
+- Responsive chart sizing with reduced label density
+- Login buttons stack vertically on narrow viewports
 
 ---
 
@@ -60,32 +77,40 @@ study-tracker/
 │   │   ├── Dashboard.razor         # Landing page & user stats
 │   │   ├── StudyLog.razor          # Session tracking
 │   │   ├── Goals.razor             # Goal management
-│   │   └── Analytics.razor         # Analytics (planned)
+│   │   └── Analytics.razor         # Charts & data visualization
 │   ├── Components/                 # Reusable UI components
 │   │   ├── SessionForm.razor       # Add/edit session form
-│   │   ├── SessionTable.razor      # Session list with actions
+│   │   ├── SessionTable.razor      # Session list (table + mobile cards)
 │   │   ├── GoalForm.razor          # Add/edit goal form
 │   │   └── UserRegistration.razor  # Auto-registration on login
 │   ├── Models/                     # Shared data models
 │   │   ├── StudySession.cs
 │   │   ├── StudyGoal.cs
-│   │   └── UserProfile.cs
-│   └── Services/                   # HTTP client services
-│       ├── StudySessionService.cs
-│       ├── StudyGoalService.cs
-│       └── UserService.cs
+│   │   ├── UserProfile.cs
+│   │   └── AnalyticsModels.cs      # Stats & chart data models
+│   ├── Services/                   # HTTP client services
+│   │   ├── StudySessionService.cs  # Includes GetStatsAsync()
+│   │   ├── StudyGoalService.cs
+│   │   └── UserService.cs
+│   └── wwwroot/
+│       ├── js/charts.js            # Chart.js interop functions
+│       └── lib/chart.js/           # Chart.js v4 library
 │
 ├── api/                            # Azure Functions backend
 │   ├── Functions/                  # HTTP-triggered endpoints
-│   │   ├── StudySessionFunctions.cs
+│   │   ├── StudySessionFunctions.cs # Includes stats endpoint
 │   │   ├── StudyGoalFunctions.cs
 │   │   └── UserProfileFunctions.cs
 │   ├── Services/                   # Business logic layer
-│   │   ├── StudySessionService.cs
+│   │   ├── StudySessionService.cs  # Includes GetStatsAsync()
 │   │   ├── StudyGoalService.cs
 │   │   └── UserProfileService.cs
+│   ├── Models/
+│   │   └── StudySessionStats.cs    # Stats response model
 │   └── Program.cs                  # DI container setup
 │
+├── specs/                          # SpecKit feature specifications
+│   └── 001-analytics-dashboard/    # Analytics feature docs
 ├── staticwebapp.config.json        # SWA routing & runtime config
 └── .github/workflows/              # CI/CD pipeline
 ```
@@ -99,10 +124,13 @@ study-tracker/
 | Method | Route | Description |
 | --- | --- | --- |
 | `GET` | `/api/sessions` | List all sessions for user |
+| `GET` | `/api/sessions/stats` | Get aggregated stats (totals, daily breakdown, category hours) |
 | `GET` | `/api/sessions/{id}` | Get a single session |
 | `POST` | `/api/sessions` | Create a new session |
 | `PUT` | `/api/sessions/{id}` | Update an existing session |
 | `DELETE` | `/api/sessions/{id}` | Delete a session |
+
+The stats endpoint accepts optional `from` and `to` query parameters (ISO 8601 dates) and defaults to the last 30 days.
 
 ### Goals
 
@@ -188,7 +216,8 @@ Pull requests get their own staging environments, which are automatically cleane
 - [x] **Phase 1** — Blazor frontend scaffold with dummy data
 - [x] **Phase 2** — Azure deployment, GitHub auth, Cosmos DB integration
 - [x] **Phase 3** — Full CRUD pages for sessions, goals, and user management
-- [ ] **Phase 4** — Charts, filtering, and data export
+- [x] **Phase 4** — Analytics dashboard with charts (bar, donut, line) and stats endpoint
+- [ ] **Phase 4.5** — Filtering, search, and CSV data export
 - [ ] **Phase 5** — AI-powered study insights
 - [ ] **Phase 6** — CI/CD hardening, polish, and portfolio presentation
 

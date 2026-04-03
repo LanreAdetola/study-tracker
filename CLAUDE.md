@@ -1,30 +1,51 @@
-# study-tracker Development Guidelines
+# Study Tracker Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-03
+## Tech Stack
 
-## Active Technologies
-
-- C# — Frontend: .NET 9.0 (Blazor WASM), Backend: .NET 8.0 (Azure Functions isolated) + Blazor WebAssembly, Azure Functions v4, Chart.js (new — via JS interop), Bootstrap 5 (001-analytics-dashboard)
+- **Frontend**: Blazor WebAssembly (.NET 9.0), Bootstrap 5.3.3, Chart.js v4 (JS interop)
+- **Backend**: Azure Functions v4 (.NET 8.0, isolated worker)
+- **Database**: Azure Cosmos DB (NoSQL), partition key `/userId`
+- **Auth**: GitHub/Microsoft OAuth via Azure Static Web Apps
+- **Hosting**: Azure Static Web Apps with GitHub Actions CI/CD
 
 ## Project Structure
 
-```text
-backend/
-frontend/
-tests/
+- `client/` — Blazor WASM frontend
+- `api/` — Azure Functions API
+- `specs/` — SpecKit feature specifications
+- `.specify/` — SpecKit templates, scripts, constitution
+- `.claude/skills/` — SpecKit slash commands
+
+## Build & Run
+
+```bash
+# Build both projects
+dotnet build
+
+# Run locally (requires api/local.settings.json with Cosmos DB connection)
+swa start http://localhost:5000 --api-location api
 ```
 
-## Commands
+## Key Patterns
 
-# Add commands for C# — Frontend: .NET 9.0 (Blazor WASM), Backend: .NET 8.0 (Azure Functions isolated)
+- All API endpoints authenticate via `x-ms-client-principal-id` header
+- Session routes use `{id:guid}` constraint to avoid conflicts with named routes like `/stats`
+- Chart.js interop is in `client/wwwroot/js/charts.js` — functions: `renderBarChart`, `renderDonutChart`, `renderLineChart`
+- Mobile responsiveness uses `d-none d-md-block` / `d-block d-md-none` to switch between table and card layouts
+- Touch targets: 44px min-height on mobile via `.btn-mobile` class
 
-## Code Style
+## Conventions
 
-C# — Frontend: .NET 9.0 (Blazor WASM), Backend: .NET 8.0 (Azure Functions isolated): Follow standard conventions
+- Client models are in `client.Models` namespace
+- API models are in `StudyTracker.Api.Models` namespace
+- Services follow the same name on client and API (e.g., `StudySessionService`)
+- Constitution at `.specify/memory/constitution.md` defines non-negotiable principles
 
-## Recent Changes
+## SpecKit Workflow
 
-- 001-analytics-dashboard: Added C# — Frontend: .NET 9.0 (Blazor WASM), Backend: .NET 8.0 (Azure Functions isolated) + Blazor WebAssembly, Azure Functions v4, Chart.js (new — via JS interop), Bootstrap 5
-
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->
+Use `/speckit-*` commands for spec-driven development:
+1. `/speckit-constitution` — Project principles
+2. `/speckit-specify` — Feature specification
+3. `/speckit-plan` — Implementation plan
+4. `/speckit-tasks` — Task breakdown
+5. `/speckit-implement` — Execute tasks
