@@ -38,24 +38,31 @@
     </table>
 </div>
 
-<!-- Mobile card layout -->
-<div class="d-block d-md-none">
+<!-- Mobile compact list -->
+<div class="d-block d-md-none session-list-mobile">
     @foreach (var session in Sessions.OrderByDescending(s => s.Date))
     {
-        <div class="session-card mb-3">
-            <div class="d-flex justify-content-between align-items-start">
-                <strong class="session-card-category">@session.Category</strong>
-                <span class="badge bg-primary">@session.Hours hrs</span>
+        <div class="session-row" @onclick="() => ToggleExpand(session.Id)">
+            <div class="session-row-main">
+                <span class="session-row-category">@session.Category</span>
+                <span class="session-row-meta">
+                    <span class="session-row-hours">@session.Hours h</span>
+                    <span class="session-row-date">@session.Date.ToString("dd/MM")</span>
+                </span>
             </div>
-            <div class="text-muted small mt-1">@session.Date.ToShortDateString()</div>
-            @if (!string.IsNullOrEmpty(session.Notes))
+            @if (expandedSessionId == session.Id)
             {
-                <div class="text-muted small mt-1 session-card-notes">@session.Notes</div>
+                <div class="session-row-expanded">
+                    @if (!string.IsNullOrEmpty(session.Notes))
+                    {
+                        <div class="text-muted small mb-2">@session.Notes</div>
+                    }
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => OnEditSession.InvokeAsync(session)" @onclick:stopPropagation="true">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => HandleDelete(session)" @onclick:stopPropagation="true">Delete</button>
+                    </div>
+                </div>
             }
-            <div class="session-card-actions mt-2">
-                <button class="btn btn-outline-primary btn-mobile" @onclick="() => OnEditSession.InvokeAsync(session)">Edit</button>
-                <button class="btn btn-outline-danger btn-mobile" @onclick="() => HandleDelete(session)">Delete</button>
-            </div>
         </div>
     }
 </div>
@@ -94,6 +101,12 @@
 
     private bool showDeleteConfirm = false;
     private StudySession? sessionToDelete;
+    private string? expandedSessionId;
+
+    private void ToggleExpand(string sessionId)
+    {
+        expandedSessionId = expandedSessionId == sessionId ? null : sessionId;
+    }
 
     private void HandleDelete(StudySession session)
     {

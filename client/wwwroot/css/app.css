@@ -246,35 +246,55 @@ code {
     opacity: 0.6;
 }
 
-/* Session Mobile Cards */
-.session-card {
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 0.875rem;
-    background: #fff;
+/* Session Mobile Compact List */
+.session-list-mobile {
+    border-top: 1px solid #e9ecef;
 }
 
-.session-card-category {
-    font-size: 0.95rem;
-    max-width: 70%;
+.session-row {
+    padding: 0.6rem 0.25rem;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
 }
 
-.session-card-notes {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.session-row:active {
+    background: #f8f9fa;
 }
 
-.session-card-actions {
+.session-row-main {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 0.5rem;
 }
 
-/* Touch-friendly buttons on mobile */
-.btn-mobile {
-    min-height: 44px;
-    min-width: 72px;
+.session-row-category {
     font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.session-row-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.session-row-hours {
+    font-weight: 600;
+    color: #1b6ec2;
+}
+
+.session-row-expanded {
+    padding-top: 0.5rem;
+    margin-top: 0.4rem;
+    border-top: 1px dashed #e9ecef;
 }
 
 /* Dashboard stats for authenticated users */
