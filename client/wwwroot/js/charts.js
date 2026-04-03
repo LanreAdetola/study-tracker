@@ -48,7 +48,7 @@ window.renderBarChart = function (canvasId, labels, data, label) {
                     ticks: {
                         maxRotation: 45,
                         autoSkip: true,
-                        maxTicksLimit: 15
+                        maxTicksLimit: window.innerWidth < 768 ? 7 : 15
                     }
                 }
             }

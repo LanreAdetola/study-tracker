@@ -246,6 +246,58 @@ code {
     opacity: 0.6;
 }
 
+/* Session Mobile Cards */
+.session-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.875rem;
+    background: #fff;
+}
+
+.session-card-category {
+    font-size: 0.95rem;
+    max-width: 70%;
+}
+
+.session-card-notes {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.session-card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Touch-friendly buttons on mobile */
+.btn-mobile {
+    min-height: 44px;
+    min-width: 72px;
+    font-size: 0.9rem;
+}
+
+/* Dashboard stats for authenticated users */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+.stats-cards .stat-card {
+    text-align: center;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+}
+
+.stats-cards .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1b6ec2;
+    margin-bottom: 0;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .hero-title {
@@ -256,9 +308,17 @@ code {
         font-size: 1.2rem;
     }
 
+    .hero-section {
+        padding: 1.5rem 0.5rem;
+    }
+
     .feature-cards {
         grid-template-columns: 1fr;
         gap: 1.5rem;
+    }
+
+    .feature-card {
+        padding: 1.25rem;
     }
 
     .chart-container {
@@ -272,5 +332,27 @@ code {
 
     .stat-card .card-title {
         font-size: 1.5rem;
+    }
+
+    .login-options {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .login-options .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    /* Touch targets for goal actions */
+    .list-group-item .btn-group-sm .btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.5rem 0.75rem;
+    }
+
+    /* Modal full-width on mobile */
+    .modal-footer .btn {
+        min-height: 44px;
     }
 }
