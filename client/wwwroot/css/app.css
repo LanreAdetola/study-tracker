@@ -196,6 +196,13 @@ code {
     margin-bottom: 1rem;
 }
 
+.login-options {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
 .tech-badge {
     color: #6c757d;
     font-size: 0.9rem;

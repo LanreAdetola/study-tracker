@@ -42,7 +42,12 @@
                     <a class="nav-link" href="/.auth/logout">Logout</a>
                 </Authorized>
                 <NotAuthorized>
-                    <a class="nav-link" href="/.auth/login/github">Login with GitHub</a>
+                    <a class="nav-link" href="/.auth/login/github">
+                        <span class="bi bi-github" aria-hidden="true"></span> Login with GitHub
+                    </a>
+                    <a class="nav-link" href="/.auth/login/aad">
+                        <span class="bi bi-microsoft" aria-hidden="true"></span> Login with Microsoft
+                    </a>
                 </NotAuthorized>
             </AuthorizeView>
         </div>

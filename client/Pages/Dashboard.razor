@@ -60,13 +60,7 @@
                 </div>
 
                 <div class="cta-section">
-                    @if (userCount?.CanRegister == true)
-                    {
-                        <a href="/.auth/login/github" class="btn btn-primary btn-lg">
-                            <i class="bi bi-github"></i> Login with GitHub
-                        </a>
-                    }
-                    else if (userCount?.CanRegister == false)
+                    @if (userCount?.CanRegister == false)
                     {
                         <button class="btn btn-secondary btn-lg" disabled>
                             <i class="bi bi-lock"></i> App at Capacity
@@ -75,9 +69,14 @@
                     }
                     else
                     {
-                        <a href="/.auth/login/github" class="btn btn-primary btn-lg">
-                            <i class="bi bi-github"></i> Login with GitHub
-                        </a>
+                        <div class="login-options">
+                            <a href="/.auth/login/github" class="btn btn-dark btn-lg">
+                                <i class="bi bi-github"></i> Login with GitHub
+                            </a>
+                            <a href="/.auth/login/aad" class="btn btn-primary btn-lg">
+                                <i class="bi bi-microsoft"></i> Login with Microsoft
+                            </a>
+                        </div>
                     }
                     <p class="tech-badge">Built with Blazor WebAssembly 🚀</p>
                 </div>

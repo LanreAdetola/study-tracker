@@ -420,3 +420,5 @@ FodyWeavers.xsd
 *.msm
 *.msp
 # Trigger deployment with new API token
+
+.fake
