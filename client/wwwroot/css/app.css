@@ -246,6 +246,29 @@ code {
     opacity: 0.6;
 }
 
+/* Goals Mobile Tab Bar */
+.goals-tab-bar {
+    border-bottom: 2px solid #e9ecef;
+}
+
+.goals-tab {
+    flex: 1;
+    padding: 0.65rem 0;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #6c757d;
+    cursor: pointer;
+    margin-bottom: -2px;
+}
+
+.goals-tab.active {
+    color: #1b6ec2;
+    border-bottom-color: #1b6ec2;
+}
+
 /* Session Mobile Compact List */
 .session-list-mobile {
     border-top: 1px solid #e9ecef;

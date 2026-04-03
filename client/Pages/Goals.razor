@@ -9,7 +9,7 @@
         <div class="container mt-4">
             <h2>📚 Study Goals</h2>
             <p class="text-muted">Manage your learning objectives and track progress (Maximum 5 goals)</p>
-            
+
             @if (goals != null && goals.Count >= 5 && selectedGoal == null)
             {
                 <div class="alert alert-warning">
@@ -17,17 +17,29 @@
                 </div>
             }
 
+            <!-- Mobile tab bar -->
+            <div class="goals-tab-bar d-flex d-md-none mb-3">
+                <button class="goals-tab @(activeTab == "goals" ? "active" : "")" @onclick='() => activeTab = "goals"'>
+                    My Goals
+                </button>
+                <button class="goals-tab @(activeTab == "form" ? "active" : "")" @onclick='() => activeTab = "form"'>
+                    @(selectedGoal != null ? "Edit Goal" : "Add Goal")
+                </button>
+            </div>
+
             <div class="row">
-                <div class="col-md-5 mb-4">
-                    <GoalForm 
-                        OnGoalAdded="ReloadGoals"
+                <!-- Form: always visible on desktop, tab-controlled on mobile -->
+                <div class="col-md-5 mb-4 @(activeTab == "form" ? "" : "d-none") d-md-block">
+                    <GoalForm
+                        OnGoalAdded="OnGoalSaved"
                         GoalToEdit="selectedGoal"
                         OnEditCancelled="CancelEdit" />
                 </div>
-                <div class="col-md-7">
+                <!-- Goals list: always visible on desktop, tab-controlled on mobile -->
+                <div class="col-md-7 @(activeTab == "goals" ? "" : "d-none") d-md-block">
                     <div class="card shadow-sm">
                         <div class="card-body">
-                            <h4 class="card-title mb-3">Your Goals</h4>
+                            <h4 class="card-title mb-3 d-none d-md-block">Your Goals</h4>
                             @if (goals == null)
                             {
                                 <p><em>Loading goals...</em></p>
@@ -82,8 +94,8 @@
                                                 </div>
                                             </div>
                                             <div class="d-flex d-md-none gap-2 mt-2">
-                                                <button class="btn btn-outline-primary btn-mobile" @onclick="() => HandleEditGoal(goal)">Edit</button>
-                                                <button class="btn btn-outline-danger btn-mobile" @onclick="() => HandleDelete(goal)">Delete</button>
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => HandleEditGoal(goal)">Edit</button>
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => HandleDelete(goal)">Delete</button>
                                             </div>
                                         </div>
                                     }
@@ -125,11 +137,12 @@
 
 @code {
     [Inject] private StudyGoalService GoalService { get; set; } = default!;
-    
+
     private List<StudyGoal>? goals;
     private StudyGoal? selectedGoal;
     private bool showDeleteConfirm = false;
     private StudyGoal? goalToDelete;
+    private string activeTab = "goals";
 
     protected override async Task OnInitializedAsync()
     {
@@ -142,15 +155,23 @@
         goals = await GoalService.GetUserGoalsAsync();
     }
 
+    private async Task OnGoalSaved()
+    {
+        await ReloadGoals();
+        activeTab = "goals";
+    }
+
     private void HandleEditGoal(StudyGoal goal)
     {
         selectedGoal = goal;
+        activeTab = "form";
         StateHasChanged();
     }
 
     private async Task CancelEdit()
     {
         selectedGoal = null;
+        activeTab = "goals";
         await InvokeAsync(StateHasChanged);
     }
 
