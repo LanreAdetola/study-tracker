@@ -1,0 +1,27 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@using client.Components
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 d-flex justify-content-end align-items-center">
+            <AuthorizeView>
+                <Authorized Context="authContext">
+                    <span>Hello, @authContext.User.Identity?.Name!</span>
+                </Authorized>
+                <NotAuthorized>
+                    <span>Please log in</span>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
+            <UserRegistration />
+            @Body
+        </article>
+    </main>
+</div>

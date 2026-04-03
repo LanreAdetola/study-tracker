@@ -1,0 +1,19 @@
+{
+  "resource": "dbs/mgpSAA==/",
+  "offerType": "Invalid",
+  "offerResourceId": "mgpSAA==",
+  "offerVersion": "V2",
+  "content": {
+    "offerThroughput": 400,
+    "offerIsRUPerMinuteThroughputEnabled": false,
+    "offerMinimumThroughputParameters": {
+      "maxThroughputEverProvisioned": 400,
+      "maxConsumedStorageEverInKB": 0
+    }
+  },
+  "id": "1ZRj",
+  "_rid": "1ZRj",
+  "_self": "offers/1ZRj/",
+  "_etag": "\"00001c0b-0000-0e00-0000-68f64ae60000\"",
+  "_ts": 1760971494
+}

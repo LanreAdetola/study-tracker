@@ -1,0 +1,49 @@
+@using client.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject UserService UserService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code {
+    private bool _hasAttemptedRegistration = false;
+    private string? _errorMessage = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_hasAttemptedRegistration) return;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            _hasAttemptedRegistration = true;
+            
+            try
+            {
+                // Try to get existing user first
+                var existingUser = await UserService.GetCurrentUserAsync();
+                
+                if (existingUser == null)
+                {
+                    // User doesn't exist, try to register
+                    await UserService.RegisterUserAsync();
+                }
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("capacity"))
+            {
+                _errorMessage = ex.Message;
+            }
+            catch
+            {
+                // Silently fail registration - user can still use the app if already registered
+            }
+        }
+    }
+}
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <strong>Registration Error:</strong> @_errorMessage
+    </div>
+}

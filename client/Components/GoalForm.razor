@@ -1,0 +1,138 @@
+@using client.Models
+@using client.Services
+@inject StudyGoalService GoalService
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">@(IsEditMode ? "Edit Study Goal" : "Add New Study Goal")</h5>
+        
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @errorMessage
+                <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+            </div>
+        }
+
+        <EditForm Model="currentGoal" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Goal Name</label>
+                <InputText class="form-control" @bind-Value="currentGoal.Name" placeholder="e.g., AWS Solutions Architect" />
+                <ValidationMessage For="() => currentGoal.Name" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Type</label>
+                <InputSelect class="form-select" @bind-Value="currentGoal.Type">
+                    <option value="">-- Select Type --</option>
+                    <option value="Subject">Subject</option>
+                    <option value="Certification">Certification</option>
+                </InputSelect>
+                <ValidationMessage For="() => currentGoal.Type" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Target Hours</label>
+                <InputNumber class="form-control" @bind-Value="currentGoal.TargetHours" />
+                <ValidationMessage For="() => currentGoal.TargetHours" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Target Date (optional)</label>
+                <InputDate class="form-control" @bind-Value="currentGoal.TargetDate" />
+            </div>
+
+            <div class="form-check mb-3">
+                <InputCheckbox class="form-check-input" @bind-Value="currentGoal.IsActive" id="isActiveCheck" />
+                <label class="form-check-label" for="isActiveCheck">
+                    Active Goal
+                </label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    @(IsEditMode ? "Update Goal" : "Add Goal")
+                </button>
+                @if (IsEditMode)
+                {
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+                }
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnGoalAdded { get; set; }
+
+    [Parameter]
+    public StudyGoal? GoalToEdit { get; set; }
+
+    [Parameter]
+    public EventCallback OnEditCancelled { get; set; }
+
+    private StudyGoal currentGoal = new();
+    private bool IsEditMode => GoalToEdit != null;
+    private string errorMessage = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        if (GoalToEdit != null)
+        {
+            currentGoal = new StudyGoal
+            {
+                Id = GoalToEdit.Id,
+                UserId = GoalToEdit.UserId,
+                UserName = GoalToEdit.UserName,
+                Name = GoalToEdit.Name,
+                Type = GoalToEdit.Type,
+                TargetHours = GoalToEdit.TargetHours,
+                CurrentHours = GoalToEdit.CurrentHours,
+                TargetDate = GoalToEdit.TargetDate,
+                IsActive = GoalToEdit.IsActive,
+                CreatedAt = GoalToEdit.CreatedAt
+            };
+        }
+        else
+        {
+            currentGoal = new() { IsActive = true };
+        }
+        errorMessage = string.Empty;
+    }
+
+    private async Task HandleSubmit()
+    {
+        bool success;
+        errorMessage = string.Empty;
+        
+        if (IsEditMode)
+        {
+            success = await GoalService.UpdateGoalAsync(currentGoal);
+        }
+        else
+        {
+            success = await GoalService.AddGoalAsync(currentGoal);
+        }
+        
+        if (success)
+        {
+            currentGoal = new() { IsActive = true };
+            await OnGoalAdded.InvokeAsync();
+        }
+        else
+        {
+            errorMessage = "Failed to save goal. You may have reached the maximum of 5 goals.";
+        }
+    }
+
+    private async Task CancelEdit()
+    {
+        currentGoal = new() { IsActive = true };
+        errorMessage = string.Empty;
+        await OnEditCancelled.InvokeAsync();
+    }
+}
