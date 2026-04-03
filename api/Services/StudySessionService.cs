@@ -90,4 +90,62 @@ public class StudySessionService : IStudySessionService
             return false;
         }
     }
+
+    public async Task<StudySessionStats> GetStatsAsync(string userId, DateTime? from, DateTime? to)
+    {
+        var startDate = from ?? DateTime.UtcNow.Date.AddDays(-30);
+        var endDate = to ?? DateTime.UtcNow.Date;
+
+        var query = new QueryDefinition(
+            "SELECT * FROM c WHERE c.userId = @userId AND c.date >= @startDate AND c.date <= @endDate AND c.hours > 0")
+            .WithParameter("@userId", userId)
+            .WithParameter("@startDate", startDate)
+            .WithParameter("@endDate", endDate.AddDays(1));
+
+        var sessions = new List<StudySession>();
+        using var feed = _container.GetItemQueryIterator<StudySession>(query,
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userId) });
+
+        while (feed.HasMoreResults)
+        {
+            var response = await feed.ReadNextAsync();
+            sessions.AddRange(response);
+        }
+
+        // Filter out future dates
+        var now = DateTime.UtcNow.Date;
+        var validSessions = sessions.Where(s => s.Date.Date <= now).ToList();
+
+        var totalDays = (endDate - startDate).Days + 1;
+        var totalHours = validSessions.Sum(s => s.Hours);
+
+        // Build daily breakdown with zero-fill
+        var dailyMap = validSessions
+            .GroupBy(s => s.Date.Date)
+            .ToDictionary(g => g.Key, g => g.Sum(s => s.Hours));
+
+        var dailyBreakdown = new List<DailyHours>();
+        for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+        {
+            dailyBreakdown.Add(new DailyHours
+            {
+                Date = date,
+                Hours = dailyMap.TryGetValue(date, out var hours) ? hours : 0
+            });
+        }
+
+        // Build category breakdown
+        var hoursByCategory = validSessions
+            .GroupBy(s => s.Category ?? "Uncategorized")
+            .ToDictionary(g => g.Key, g => g.Sum(s => s.Hours));
+
+        return new StudySessionStats
+        {
+            TotalSessions = validSessions.Count,
+            TotalHours = Math.Round(totalHours, 1),
+            AverageHoursPerDay = totalDays > 0 ? Math.Round(totalHours / totalDays, 1) : 0,
+            HoursByCategory = hoursByCategory,
+            DailyBreakdown = dailyBreakdown
+        };
+    }
 }

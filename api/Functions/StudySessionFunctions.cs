@@ -199,6 +199,39 @@ public class StudySessionFunctions
         }
     }
 
+    [Function("GetStudySessionStats")]
+    public async Task<HttpResponseData> GetStudySessionStats(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "sessions/stats")] HttpRequestData req)
+    {
+        _logger.LogInformation("Getting study session stats");
+
+        try
+        {
+            var userId = GetUserIdFromRequest(req);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return await CreateErrorResponse(req, HttpStatusCode.Unauthorized, "User not authenticated");
+            }
+
+            DateTime? from = null;
+            DateTime? to = null;
+
+            var queryParams = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
+            if (DateTime.TryParse(queryParams["from"], out var fromDate))
+                from = fromDate;
+            if (DateTime.TryParse(queryParams["to"], out var toDate))
+                to = toDate;
+
+            var stats = await _studySessionService.GetStatsAsync(userId, from, to);
+            return await CreateJsonResponse(req, stats);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting study session stats");
+            return await CreateErrorResponse(req, HttpStatusCode.InternalServerError, "Internal server error");
+        }
+    }
+
     private static string? GetUserIdFromRequest(HttpRequestData req)
     {
         // Extract user ID from Azure Static Web Apps authentication headers
