@@ -45,7 +45,7 @@ public class StudySessionFunctions
 
     [Function("GetStudySession")]
     public async Task<HttpResponseData> GetStudySession(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "sessions/{id}")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "sessions/{id:guid}")] HttpRequestData req,
         string id)
     {
         _logger.LogInformation("Getting study session {Id}", id);
@@ -121,7 +121,7 @@ public class StudySessionFunctions
 
     [Function("UpdateStudySession")]
     public async Task<HttpResponseData> UpdateStudySession(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "sessions/{id}")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "sessions/{id:guid}")] HttpRequestData req,
         string id)
     {
         _logger.LogInformation("Updating study session {Id}", id);
@@ -171,7 +171,7 @@ public class StudySessionFunctions
 
     [Function("DeleteStudySession")]
     public async Task<HttpResponseData> DeleteStudySession(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "sessions/{id}")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "sessions/{id:guid}")] HttpRequestData req,
         string id)
     {
         _logger.LogInformation("Deleting study session {Id}", id);
