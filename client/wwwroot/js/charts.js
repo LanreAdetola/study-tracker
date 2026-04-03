@@ -99,7 +99,7 @@ window.renderDonutChart = function (canvasId, labels, data) {
     });
 };
 
-window.renderLineChart = function (canvasId, datasets) {
+window.renderLineChart = function (canvasId, labels, datasets) {
     destroyChart(canvasId);
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
@@ -113,33 +113,42 @@ window.renderLineChart = function (canvasId, datasets) {
         const ds = datasets[i];
         const color = colors[i % colors.length];
 
+        // Convert -1 sentinel to null so Chart.js skips those points
+        const progressData = ds.points.map(p => p.cumulativeHours < 0 ? null : p.cumulativeHours);
+
         // Progress line
         chartDatasets.push({
             label: ds.goalName,
-            data: ds.points.map(p => ({ x: p.date, y: p.cumulativeHours })),
+            data: progressData,
             borderColor: color,
             backgroundColor: color + '20',
             fill: false,
             tension: 0.3,
-            pointRadius: 3
+            pointRadius: 3,
+            spanGaps: false
         });
 
-        // Target reference line
+        // Target reference line — only span the range where this goal has data
         if (ds.targetHours > 0) {
+            const targetData = ds.points.map(p => p.cumulativeHours < 0 ? null : ds.targetHours);
             chartDatasets.push({
                 label: ds.goalName + ' Target',
-                data: ds.points.map(p => ({ x: p.date, y: ds.targetHours })),
+                data: targetData,
                 borderColor: color,
                 borderDash: [5, 5],
                 pointRadius: 0,
-                fill: false
+                fill: false,
+                spanGaps: true
             });
         }
     }
 
     chartInstances[canvasId] = new Chart(ctx, {
         type: 'line',
-        data: { datasets: chartDatasets },
+        data: {
+            labels: labels,
+            datasets: chartDatasets
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -151,6 +160,7 @@ window.renderLineChart = function (canvasId, datasets) {
                 tooltip: {
                     callbacks: {
                         label: function (context) {
+                            if (context.parsed.y == null) return null;
                             return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' hrs';
                         }
                     }
@@ -158,11 +168,10 @@ window.renderLineChart = function (canvasId, datasets) {
             },
             scales: {
                 x: {
-                    type: 'category',
                     ticks: {
                         maxRotation: 45,
                         autoSkip: true,
-                        maxTicksLimit: 15
+                        maxTicksLimit: window.innerWidth < 768 ? 7 : 15
                     }
                 },
                 y: {

@@ -104,6 +104,7 @@ else
 @code {
     private StudySessionStats? stats;
     private List<GoalProgressDataset> goalDatasets = new();
+    private string[] sharedGoalLabels = Array.Empty<string>();
     private bool isLoading = true;
     private bool chartsRendered = false;
 
@@ -154,7 +155,7 @@ else
         // Line chart: goal progress
         if (goalDatasets.Any())
         {
-            await JS.InvokeVoidAsync("renderLineChart", "goalProgressChart", goalDatasets);
+            await JS.InvokeVoidAsync("renderLineChart", "goalProgressChart", sharedGoalLabels, goalDatasets);
         }
     }
 
@@ -166,6 +167,10 @@ else
         var sessions = await SessionService.GetUserSessionsAsync();
         if (!sessions.Any()) return;
 
+        // Collect all unique dates across all goal sessions, sorted chronologically
+        var allDates = new SortedSet<DateTime>();
+        var goalSessionsMap = new Dictionary<string, List<StudySession>>();
+
         foreach (var goal in activeGoals)
         {
             var goalSessions = sessions
@@ -175,15 +180,46 @@ else
 
             if (!goalSessions.Any()) continue;
 
+            goalSessionsMap[goal.Name] = goalSessions;
+            foreach (var s in goalSessions)
+                allDates.Add(s.Date.Date);
+        }
+
+        if (!allDates.Any()) return;
+
+        // Build shared labels from sorted dates
+        var sortedDates = allDates.ToList();
+        sharedGoalLabels = sortedDates.Select(d => d.ToString("MMM dd")).ToArray();
+
+        // For each goal, compute cumulative hours at each shared date
+        foreach (var goal in activeGoals)
+        {
+            if (!goalSessionsMap.ContainsKey(goal.Name)) continue;
+
+            var goalSessions = goalSessionsMap[goal.Name];
+
+            // Group sessions by date and sum hours
+            var hoursByDate = goalSessions
+                .GroupBy(s => s.Date.Date)
+                .ToDictionary(g => g.Key, g => g.Sum(s => s.Hours));
+
             double cumulative = 0;
+            double? lastValue = null;
             var points = new List<GoalProgressPoint>();
-            foreach (var session in goalSessions)
+
+            foreach (var date in sortedDates)
             {
-                cumulative += session.Hours;
+                if (hoursByDate.TryGetValue(date, out var hours))
+                {
+                    cumulative += hours;
+                    lastValue = Math.Round(cumulative, 1);
+                }
+
+                // Only emit points from this goal's first session onward
                 points.Add(new GoalProgressPoint
                 {
-                    Date = session.Date.ToString("MMM dd"),
-                    CumulativeHours = Math.Round(cumulative, 1)
+                    Date = date.ToString("MMM dd"),
+                    CumulativeHours = lastValue ?? -1 // -1 = no data yet
                 });
             }
 
