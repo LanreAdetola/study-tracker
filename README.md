@@ -1,189 +1,74 @@
 # Study Tracker
 
-A full-stack study tracking web application built with Blazor WebAssembly and Azure Functions, deployed on Azure Static Web Apps with GitHub OAuth authentication and Cosmos DB persistence.
+> A full-stack study tracking app built on Azure, designed to help users log sessions, set goals, and visualize their progress over time.
 
-**Live Demo:** [kind-sky-0c0b6ea03.3.azurestaticapps.net](https://kind-sky-0c0b6ea03.3.azurestaticapps.net/)
+**Live app:** [https://kind-sky-0c0b6ea03.3.azurestaticapps.net/](https://kind-sky-0c0b6ea03.3.azurestaticapps.net/)
 
----
+## What it does
 
-## Tech Stack
+Study Tracker is a web application that lets users log study sessions, create goals for certifications and subjects, and see how their study habits look over time through charts and KPIs. The idea came from wanting a simple, focused tool to track certification study hours without the overhead of a full project management app.
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | Blazor WebAssembly (.NET 9.0), Bootstrap 5, Chart.js v4 |
-| Backend | Azure Functions v4 (.NET 8.0, isolated worker) |
-| Database | Azure Cosmos DB (NoSQL) |
-| Authentication | GitHub OAuth via Azure Static Web Apps |
-| Hosting | Azure Static Web Apps |
-| CI/CD | GitHub Actions with OIDC token authentication |
-| Monitoring | Application Insights |
+Users authenticate with GitHub or Microsoft via Azure Static Web Apps' built-in auth. Once logged in, they can log study sessions with a category, hours, date, and optional notes. They can create up to 5 goals (e.g., "AI-300 Machine Learning Operations — 25 hours") and track cumulative progress against each one. The analytics page shows daily study hours as a bar chart, category breakdown as a donut chart, and goal progress as a line chart with target reference lines — all powered by Chart.js via Blazor JS interop.
 
----
-
-## Features
-
-### Study Sessions
-
-- Log study sessions with category, hours, date, and optional notes
-- Edit and delete sessions with confirmation modals
-- Link sessions to active goals or enter a custom category
-- Client-side and server-side validation (e.g. no future dates, hours > 0)
-
-### Study Goals
-
-- Create up to 5 goals per user (Subject or Certification types)
-- Set target hours (1–10,000) and optional target dates
-- Visual progress bars showing current hours vs. target
-- Toggle goals between active and inactive
-
-### User Management
-
-- GitHub OAuth login — no passwords to manage
-- Automatic user registration on first login
-- 50-user capacity limit with live counter on the landing page
-- Per-user data isolation enforced at the API level
-
-### Analytics
-
-- Daily study hours bar chart (last 30 days)
-- Category breakdown donut chart
-- Goal progress line chart with target reference lines
-- Summary stats: total sessions, total hours, average hours/day
-- Designed empty state with call-to-action for new users
-- Powered by Chart.js via JavaScript interop
-
-### Dashboard
-
-- Personalized greeting for authenticated users
-- Summary stats: total study sessions and total hours logged
-- Hero landing page with feature overview for new visitors
-
-### Mobile Optimization
-
-- Session table switches to card layout on small screens
-- Touch-friendly buttons (44px min-height) across all pages
-- Full-screen modals on mobile for confirmations
-- Responsive chart sizing with reduced label density
-- Login buttons stack vertically on narrow viewports
-
----
+The dashboard shows four KPI cards at a glance: total sessions, total hours, current study streak (consecutive days), and a weekly comparison with a trend arrow. Completed goals get a green badge and a congratulatory toast notification the moment you log the session that pushes past the target. The whole app is mobile-optimized with a slide-out nav drawer, compact session lists, tab navigation on the goals page, and touch-friendly tap targets.
 
 ## Architecture
 
-```
-study-tracker/
-├── client/                         # Blazor WebAssembly frontend
-│   ├── Pages/                      # Route-level pages
-│   │   ├── Dashboard.razor         # Landing page & user stats
-│   │   ├── StudyLog.razor          # Session tracking
-│   │   ├── Goals.razor             # Goal management
-│   │   └── Analytics.razor         # Charts & data visualization
-│   ├── Components/                 # Reusable UI components
-│   │   ├── SessionForm.razor       # Add/edit session form
-│   │   ├── SessionTable.razor      # Session list (table + mobile cards)
-│   │   ├── GoalForm.razor          # Add/edit goal form
-│   │   └── UserRegistration.razor  # Auto-registration on login
-│   ├── Models/                     # Shared data models
-│   │   ├── StudySession.cs
-│   │   ├── StudyGoal.cs
-│   │   ├── UserProfile.cs
-│   │   └── AnalyticsModels.cs      # Stats & chart data models
-│   ├── Services/                   # HTTP client services
-│   │   ├── StudySessionService.cs  # Includes GetStatsAsync()
-│   │   ├── StudyGoalService.cs
-│   │   └── UserService.cs
-│   └── wwwroot/
-│       ├── js/charts.js            # Chart.js interop functions
-│       └── lib/chart.js/           # Chart.js v4 library
-│
-├── api/                            # Azure Functions backend
-│   ├── Functions/                  # HTTP-triggered endpoints
-│   │   ├── StudySessionFunctions.cs # Includes stats endpoint
-│   │   ├── StudyGoalFunctions.cs
-│   │   └── UserProfileFunctions.cs
-│   ├── Services/                   # Business logic layer
-│   │   ├── StudySessionService.cs  # Includes GetStatsAsync()
-│   │   ├── StudyGoalService.cs
-│   │   └── UserProfileService.cs
-│   ├── Models/
-│   │   └── StudySessionStats.cs    # Stats response model
-│   └── Program.cs                  # DI container setup
-│
-├── specs/                          # SpecKit feature specifications
-│   └── 001-analytics-dashboard/    # Analytics feature docs
-├── staticwebapp.config.json        # SWA routing & runtime config
-└── .github/workflows/              # CI/CD pipeline
+```text
+Browser (Blazor WebAssembly)
+    |
+    |-- Client-side SPA (.NET 9.0)
+    |   Handles routing, UI rendering, Chart.js interop
+    |
+    v
+Azure Static Web Apps
+    |-- Serves the Blazor WASM static files
+    |-- Handles GitHub/Microsoft OAuth (built-in auth provider)
+    |-- Routes /api/* to the managed Azure Functions backend
+    |-- Creates staging environments for pull requests
+    |
+    v
+Azure Functions v4 (isolated worker, .NET 8.0)
+    |-- REST API: sessions CRUD, goals CRUD, user registration
+    |-- Stats endpoint: aggregates sessions into daily breakdown,
+    |   category hours, streaks, and weekly comparison
+    |-- Authenticates via x-ms-client-principal-id header from SWA
+    |
+    v
+Azure Cosmos DB (NoSQL)
+    |-- Partition key: /userId (single-partition reads, per-user isolation)
+    |-- Containers: sessions, goals, users
 ```
 
----
+Every API request is scoped to the authenticated user's partition key, so there is zero chance of cross-user data leakage. The stats endpoint computes streaks and weekly comparisons server-side to avoid sending raw session data to the browser.
 
-## API Endpoints
+## Azure services used
 
-### Sessions
+- **Azure Static Web Apps** — Hosts the Blazor WASM frontend, manages the Azure Functions API, handles OAuth authentication (GitHub + Microsoft), and automatically provisions staging environments for pull requests
+- **Azure Functions v4** — Serverless API layer running .NET 8.0 in isolated worker mode. Handles all CRUD operations and server-side analytics aggregation
+- **Azure Cosmos DB** — NoSQL document database with `/userId` as the partition key. Stores sessions, goals, and user profiles. All queries are single-partition reads for performance and cost efficiency
+- **Application Insights** — Monitoring and telemetry for the Azure Functions backend
 
-| Method | Route | Description |
-| --- | --- | --- |
-| `GET` | `/api/sessions` | List all sessions for user |
-| `GET` | `/api/sessions/stats` | Get aggregated stats (totals, daily breakdown, category hours) |
-| `GET` | `/api/sessions/{id}` | Get a single session |
-| `POST` | `/api/sessions` | Create a new session |
-| `PUT` | `/api/sessions/{id}` | Update an existing session |
-| `DELETE` | `/api/sessions/{id}` | Delete a session |
+## Deployment
 
-The stats endpoint accepts optional `from` and `to` query parameters (ISO 8601 dates) and defaults to the last 30 days.
+The app deploys automatically through a GitHub Actions workflow (`.github/workflows/azure-static-web-apps-kind-sky-0c0b6ea03.yml`). The workflow triggers on:
 
-### Goals
+- **Push to `main`** — Builds and deploys the Blazor frontend and Azure Functions API to production
+- **Pull request events** (opened, synchronize, reopened) — Deploys to an isolated staging environment for testing
+- **Pull request closed** — Automatically tears down the staging environment
 
-| Method | Route | Description |
-| --- | --- | --- |
-| `GET` | `/api/goals` | List all goals for user |
-| `GET` | `/api/goals/{id}` | Get a single goal |
-| `POST` | `/api/goals` | Create a new goal (max 5) |
-| `PUT` | `/api/goals/{id}` | Update an existing goal |
-| `DELETE` | `/api/goals/{id}` | Delete a goal |
+Authentication with Azure uses **OIDC token exchange** — no long-lived credentials stored in GitHub Secrets. The workflow requests an ID token at runtime, which is passed to the `Azure/static-web-apps-deploy@v1` action. The only secret required is `AZURE_STATIC_WEB_APPS_API_TOKEN_KIND_SKY_0C0B6EA03`, which authorizes the deployment.
 
-### Users
+The SWA deploy action handles the build internally: it compiles the Blazor WASM project from `client/`, the Azure Functions project from `api/`, and deploys both as a single unit.
 
-| Method | Route | Description |
-| --- | --- | --- |
-| `GET` | `/api/users/count` | Get user count and capacity status |
-| `POST` | `/api/users/register` | Register a new user (50-user limit) |
-| `GET` | `/api/users/me` | Get current user profile |
-
-All endpoints authenticate via the `x-ms-client-principal-id` header provided by Azure Static Web Apps.
-
----
-
-## Running Locally
-
-### Prerequisites
-
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [Azure Functions Core Tools v4](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local)
-- [Azure Static Web Apps CLI](https://github.com/Azure/static-web-apps-cli)
-
-### Steps
+## How to run locally
 
 ```bash
-# Clone the repository
 git clone https://github.com/LanreAdetola/study-tracker.git
 cd study-tracker
 
-# Start the API (requires a Cosmos DB connection string in local.settings.json)
-cd api
-func start
-
-# In a separate terminal, start the frontend
-cd client
-dotnet run
-
-# Or use the SWA CLI to run both together
-swa start http://localhost:5000 --api-location api
-```
-
-Create an `api/local.settings.json` with your Cosmos DB connection:
-
-```json
+# Create API local settings with your Cosmos DB connection
+cat > api/local.settings.json << EOF
 {
   "IsEncrypted": false,
   "Values": {
@@ -192,36 +77,21 @@ Create an `api/local.settings.json` with your Cosmos DB connection:
     "CosmosDBConnectionString": "<your-cosmos-db-connection-string>"
   }
 }
+EOF
+
+# Run both frontend and API together
+swa start http://localhost:5000 --api-location api
 ```
 
----
+Prerequisites: [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0), [Azure Functions Core Tools v4](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local), and the [SWA CLI](https://github.com/Azure/static-web-apps-cli).
 
-## Deployment
+## What I learned
 
-The app deploys automatically via GitHub Actions on every push to `main`.
+The biggest surprise was how much Azure Static Web Apps handles for you — and how specific you need to be with the parts it doesn't. Authentication "just works" by adding `/.auth/login/github` links, and the `x-ms-client-principal-id` header appears on every API request without any middleware. But the SPA fallback routing caught me off guard: `staticwebapp.config.json` has to live inside `client/wwwroot/` so it ends up in the deployed output. I had it in the repo root for weeks and couldn't figure out why page refreshes on `/goals` or `/analytics` returned Azure's 404 page. Once I moved it, every route worked instantly.
 
-The workflow:
+Chart.js via Blazor JS interop turned out to be simpler than I expected. Instead of pulling in a Blazor wrapper library, I wrote a single `charts.js` file with three functions (`renderBarChart`, `renderDonutChart`, `renderLineChart`) and called them from `OnAfterRenderAsync`. The tricky part was getting the goal progress chart to work when users backfilled sessions — each goal had its own date range, and Chart.js was treating the X-axis as categorical instead of chronological. The fix was building a shared sorted timeline across all goals and using `null` values for gaps.
 
-1. Checks out the repository
-2. Authenticates with Azure using OIDC
-3. Builds the Blazor frontend and Azure Functions API
-4. Deploys both to Azure Static Web Apps
-
-Pull requests get their own staging environments, which are automatically cleaned up when the PR is closed.
-
----
-
-## Roadmap
-
-- [x] **Phase 1** — Blazor frontend scaffold with dummy data
-- [x] **Phase 2** — Azure deployment, GitHub auth, Cosmos DB integration
-- [x] **Phase 3** — Full CRUD pages for sessions, goals, and user management
-- [x] **Phase 4** — Analytics dashboard with charts (bar, donut, line) and stats endpoint
-- [ ] **Phase 4.5** — Filtering, search, and CSV data export
-- [ ] **Phase 5** — AI-powered study insights
-- [ ] **Phase 6** — CI/CD hardening, polish, and portfolio presentation
-
----
+If I were starting over, I'd add the toast notification system earlier — it's useful for every CRUD operation, not just goal completion. I'd also set up the `staticwebapp.config.json` in `wwwroot/` from day one and use the Cosmos DB emulator locally instead of connecting to the live database. The 50-user cap was a deliberate free-tier constraint, but it turned out to be a useful design forcing function: it made me think about per-user data isolation from the start rather than bolting it on later.
 
 ## Author
 
