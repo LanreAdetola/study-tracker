@@ -246,6 +246,83 @@ code {
     opacity: 0.6;
 }
 
+/* Dashboard KPI Grid */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.kpi-card {
+    text-align: center;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.kpi-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1b6ec2;
+    margin-bottom: 0;
+}
+
+.kpi-unit {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #6c757d;
+}
+
+.kpi-sub {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+    color: #6c757d;
+}
+
+.trend-up {
+    color: #28a745 !important;
+}
+
+.trend-down {
+    color: #dc3545 !important;
+}
+
+.trend-equal {
+    color: #6c757d !important;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.toast-item {
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: toast-slide-in 0.3s ease;
+    max-width: 350px;
+}
+
+.toast-success { background: #28a745; }
+.toast-error { background: #dc3545; }
+.toast-info { background: #1b6ec2; }
+
+@keyframes toast-slide-in {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
 /* Goals Mobile Tab Bar */
 .goals-tab-bar {
     border-bottom: 2px solid #e9ecef;
@@ -343,6 +420,19 @@ code {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .kpi-value {
+        font-size: 1.4rem;
+    }
+
+    .toast-item {
+        max-width: calc(100vw - 2rem);
+    }
+
     .hero-title {
         font-size: 2rem;
     }

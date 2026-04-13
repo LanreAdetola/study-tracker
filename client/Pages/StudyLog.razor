@@ -1,6 +1,7 @@
 @page "/study-log"
 @using Microsoft.AspNetCore.Components.Authorization
 @using client.Models
+@using client.Services
 @using client.Components
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
@@ -55,7 +56,9 @@
 
 @code {
     [Inject] private StudySessionService SessionService { get; set; } = default!;
-    
+    [Inject] private StudyGoalService GoalService { get; set; } = default!;
+    [Inject] private ToastService ToastService { get; set; } = default!;
+
     private List<StudySession>? sessions;
     private StudySession? selectedSession;
 
@@ -66,8 +69,25 @@
 
     private async Task ReloadSessions()
     {
-        selectedSession = null; // Clear selection when reloading
+        // Snapshot goal hours before reload to detect completions
+        var goalsBefore = await GoalService.GetActiveGoalsAsync();
+        var hoursBefore = goalsBefore.ToDictionary(g => g.Id, g => g.CurrentHours);
+
+        selectedSession = null;
         sessions = await SessionService.GetUserSessionsAsync();
+
+        // Check if any goals just crossed the completion threshold
+        var goalsAfter = await GoalService.GetActiveGoalsAsync();
+        foreach (var goal in goalsAfter)
+        {
+            if (goal.TargetHours > 0 &&
+                goal.CurrentHours >= goal.TargetHours &&
+                hoursBefore.TryGetValue(goal.Id, out var prevHours) &&
+                prevHours < goal.TargetHours)
+            {
+                ToastService.Show($"Goal completed: {goal.Name}!", ToastType.Success);
+            }
+        }
     }
 
     private void HandleEditSession(StudySession session)

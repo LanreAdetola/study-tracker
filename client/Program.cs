@@ -17,6 +17,7 @@ builder.Services.AddAuthorizationCore();
 // Add Azure Static Web Apps authentication state provider
 builder.Services.AddScoped<AuthenticationStateProvider, AzureStaticWebAppsAuthenticationStateProvider>();
 
+builder.Services.AddSingleton<ToastService>();
 builder.Services.AddScoped<StudySessionService>();
 builder.Services.AddScoped<StudyGoalService>();
 builder.Services.AddScoped<UserService>();

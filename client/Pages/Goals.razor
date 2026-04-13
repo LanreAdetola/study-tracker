@@ -60,7 +60,11 @@
                                                 <div class="flex-grow-1">
                                                     <h5 class="mb-1">
                                                         @goal.Name
-                                                        @if (!goal.IsActive)
+                                                        @if (goal.CurrentHours >= goal.TargetHours && goal.TargetHours > 0)
+                                                        {
+                                                            <span class="badge bg-success ms-2">Completed</span>
+                                                        }
+                                                        else if (!goal.IsActive)
                                                         {
                                                             <span class="badge bg-secondary ms-2">Inactive</span>
                                                         }
@@ -79,7 +83,7 @@
                                                                 ? Math.Min((goal.CurrentHours / goal.TargetHours) * 100, 100)
                                                                 : 0;
                                                         }
-                                                        <div class="progress-bar" role="progressbar"
+                                                        <div class="progress-bar @(goal.CurrentHours >= goal.TargetHours && goal.TargetHours > 0 ? "bg-success" : "")" role="progressbar"
                                                              style="width: @(progressPercent)%;"
                                                              aria-valuenow="@progressPercent"
                                                              aria-valuemin="0"

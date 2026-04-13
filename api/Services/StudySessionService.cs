@@ -139,13 +139,94 @@ public class StudySessionService : IStudySessionService
             .GroupBy(s => s.Category ?? "Uncategorized")
             .ToDictionary(g => g.Key, g => g.Sum(s => s.Hours));
 
+        // Compute streak and weekly hours from ALL sessions (not just date range)
+        var allSessionsQuery = new QueryDefinition(
+            "SELECT c.date, c.hours FROM c WHERE c.userId = @userId AND c.hours > 0")
+            .WithParameter("@userId", userId);
+
+        var allSessions = new List<StudySession>();
+        using var allFeed = _container.GetItemQueryIterator<StudySession>(allSessionsQuery,
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userId) });
+
+        while (allFeed.HasMoreResults)
+        {
+            var resp = await allFeed.ReadNextAsync();
+            allSessions.AddRange(resp);
+        }
+
+        var allValidSessions = allSessions.Where(s => s.Date.Date <= now).ToList();
+
+        // Streak calculation
+        var studyDates = allValidSessions
+            .Select(s => s.Date.Date)
+            .Distinct()
+            .OrderByDescending(d => d)
+            .ToList();
+
+        int currentStreak = 0;
+        int longestStreak = 0;
+
+        if (studyDates.Any())
+        {
+            // Current streak: count backward from today (or yesterday)
+            var checkDate = now;
+            if (!studyDates.Contains(checkDate))
+                checkDate = now.AddDays(-1);
+
+            if (studyDates.Contains(checkDate))
+            {
+                currentStreak = 1;
+                var prev = checkDate.AddDays(-1);
+                while (studyDates.Contains(prev))
+                {
+                    currentStreak++;
+                    prev = prev.AddDays(-1);
+                }
+            }
+
+            // Longest streak: scan all dates ascending
+            var ascending = studyDates.OrderBy(d => d).ToList();
+            int run = 1;
+            longestStreak = 1;
+            for (int i = 1; i < ascending.Count; i++)
+            {
+                if ((ascending[i] - ascending[i - 1]).Days == 1)
+                {
+                    run++;
+                    if (run > longestStreak) longestStreak = run;
+                }
+                else
+                {
+                    run = 1;
+                }
+            }
+        }
+
+        // Weekly hours (ISO: Monday-Sunday)
+        var todayDow = (int)now.DayOfWeek;
+        var mondayOffset = todayDow == 0 ? -6 : -(todayDow - 1);
+        var thisWeekStart = now.AddDays(mondayOffset);
+        var lastWeekStart = thisWeekStart.AddDays(-7);
+
+        var thisWeekHours = allValidSessions
+            .Where(s => s.Date.Date >= thisWeekStart && s.Date.Date < thisWeekStart.AddDays(7))
+            .Sum(s => s.Hours);
+
+        var lastWeekHours = allValidSessions
+            .Where(s => s.Date.Date >= lastWeekStart && s.Date.Date < thisWeekStart)
+            .Sum(s => s.Hours);
+
         return new StudySessionStats
         {
             TotalSessions = validSessions.Count,
             TotalHours = Math.Round(totalHours, 1),
             AverageHoursPerDay = totalDays > 0 ? Math.Round(totalHours / totalDays, 1) : 0,
             HoursByCategory = hoursByCategory,
-            DailyBreakdown = dailyBreakdown
+            DailyBreakdown = dailyBreakdown,
+            CurrentStreak = currentStreak,
+            LongestStreak = longestStreak,
+            ThisWeekHours = Math.Round(thisWeekHours, 1),
+            LastWeekHours = Math.Round(lastWeekHours, 1)
         };
     }
 }
