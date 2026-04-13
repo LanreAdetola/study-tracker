@@ -49,3 +49,9 @@ Use `/speckit-*` commands for spec-driven development:
 3. `/speckit-plan` — Implementation plan
 4. `/speckit-tasks` — Task breakdown
 5. `/speckit-implement` — Execute tasks
+
+## Active Technologies
+- C# — Frontend: .NET 9.0 (Blazor WASM), Backend: .NET 8.0 (Azure Functions isolated) + Blazor WebAssembly, Azure Functions v4, Bootstrap 5, Chart.js v4 (002-goal-completion-dashboard-kpis)
+
+## Recent Changes
+- 002-goal-completion-dashboard-kpis: Added C# — Frontend: .NET 9.0 (Blazor WASM), Backend: .NET 8.0 (Azure Functions isolated) + Blazor WebAssembly, Azure Functions v4, Bootstrap 5, Chart.js v4
