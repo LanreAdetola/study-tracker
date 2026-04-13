@@ -1,5 +1,10 @@
 # Study Tracker
 
+![Blazor](https://img.shields.io/badge/Blazor-WASM-512BD4?logo=blazor&logoColor=white)
+![.NET](https://img.shields.io/badge/.NET-9.0%20%7C%208.0-512BD4?logo=dotnet&logoColor=white)
+![Azure Static Web Apps](https://img.shields.io/badge/Azure-Static%20Web%20Apps-0078D4?logo=microsoftazure&logoColor=white)
+![Cosmos DB](https://img.shields.io/badge/Cosmos%20DB-NoSQL-0078D4?logo=microsoftazure&logoColor=white)
+
 > A full-stack study tracking app built on Azure, designed to help users log sessions, set goals, and visualize their progress over time.
 
 **Live app:** [https://kind-sky-0c0b6ea03.3.azurestaticapps.net/](https://kind-sky-0c0b6ea03.3.azurestaticapps.net/)
