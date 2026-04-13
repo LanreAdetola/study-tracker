@@ -1,30 +1,92 @@
 @page "/"
+@using client.Models
 @using client.Services
 @inject StudySessionService SessionService
+@inject StudyGoalService GoalService
 @inject UserService UserService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <AuthorizeView>
     <Authorized>
-        <h3>📊 Dashboard</h3>
+        <h3>Welcome, @userName!</h3>
 
-        <p>Welcome, @userName!</p>
-
-        <div class="stats-cards">
-            <div class="stat-card">
+        <div class="kpi-grid">
+            <div class="kpi-card">
                 <h6 class="text-muted mb-1">Total Sessions</h6>
-                <p class="stat-value">@totalSessions</p>
+                <p class="kpi-value">@(stats?.TotalSessions ?? 0)</p>
             </div>
-            <div class="stat-card">
+            <div class="kpi-card">
                 <h6 class="text-muted mb-1">Total Hours</h6>
-                <p class="stat-value">@totalHours.ToString("F1")</p>
+                <p class="kpi-value">@((stats?.TotalHours ?? 0).ToString("F1"))</p>
             </div>
+            <div class="kpi-card">
+                <h6 class="text-muted mb-1">Study Streak</h6>
+                <p class="kpi-value">@(stats?.CurrentStreak ?? 0) <span class="kpi-unit">days</span></p>
+                <p class="kpi-sub">Longest: @(stats?.LongestStreak ?? 0) days</p>
+            </div>
+            <div class="kpi-card">
+                <h6 class="text-muted mb-1">This Week</h6>
+                <p class="kpi-value">@((stats?.ThisWeekHours ?? 0).ToString("F1")) <span class="kpi-unit">hrs</span></p>
+                @if (stats != null)
+                {
+                    var diff = stats.ThisWeekHours - stats.LastWeekHours;
+                    <p class="kpi-sub @(diff > 0 ? "trend-up" : diff < 0 ? "trend-down" : "trend-equal")">
+                        @(diff > 0 ? "+" : "")@diff.ToString("F1") vs last week
+                    </p>
+                }
+            </div>
+        </div>
+
+        <!-- Active Goals Progress -->
+        <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0">Active Goals</h5>
+                <a href="goals" class="text-decoration-none small">View all</a>
+            </div>
+            @if (activeGoals == null || !activeGoals.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center text-muted py-3">
+                        No active goals. <a href="goals">Create a goal</a> to track progress.
+                    </div>
+                </div>
+            }
+            else
+            {
+                @foreach (var goal in activeGoals.Take(3))
+                {
+                    var pct = goal.TargetHours > 0
+                        ? Math.Min((goal.CurrentHours / goal.TargetHours) * 100, 100) : 0;
+                    var isComplete = goal.CurrentHours >= goal.TargetHours && goal.TargetHours > 0;
+                    <div class="card mb-2">
+                        <div class="card-body py-2 px-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="fw-medium">
+                                    @goal.Name
+                                    @if (isComplete)
+                                    {
+                                        <span class="badge bg-success ms-1">Done</span>
+                                    }
+                                </span>
+                                <span class="text-muted">@goal.CurrentHours.ToString("F1")/@goal.TargetHours hrs</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar @(isComplete ? "bg-success" : "")"
+                                     role="progressbar"
+                                     style="width: @(pct)%;"
+                                     aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
         </div>
     </Authorized>
     <NotAuthorized>
         <div class="hero-section">
             <div class="hero-content">
-                <h1 class="hero-title">📚 Study Tracker</h1>
+                <h1 class="hero-title">Study Tracker</h1>
                 <p class="hero-tagline">Track your study progress and achieve your goals</p>
 
                 @if (userCount != null)
@@ -80,7 +142,7 @@
                     </div>
                 </div>
 
-                <p class="tech-badge">Built with Blazor WebAssembly 🚀</p>
+                <p class="tech-badge">Built with Blazor WebAssembly</p>
             </div>
         </div>
     </NotAuthorized>
@@ -88,8 +150,8 @@
 
 @code {
     private string userName = "User";
-    private int totalSessions = 0;
-    private double totalHours = 0;
+    private StudySessionStats? stats;
+    private List<StudyGoal>? activeGoals;
     private UserCountResponse? userCount = null;
 
     protected override async Task OnInitializedAsync()
@@ -100,14 +162,11 @@
         if (user.Identity?.IsAuthenticated ?? false)
         {
             userName = user.Identity.Name ?? "User";
-            
-            var sessions = await SessionService.GetUserSessionsAsync();
-            totalSessions = sessions.Count;
-            totalHours = sessions.Sum(s => s.Hours);
+            stats = await SessionService.GetStatsAsync();
+            activeGoals = await GoalService.GetActiveGoalsAsync();
         }
         else
         {
-            // Load user count for landing page
             userCount = await UserService.GetUserCountAsync();
         }
     }
