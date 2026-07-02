@@ -186,6 +186,7 @@ resource authSettings 'Microsoft.Web/sites/config@2023-12-01' = {
         registration: {
           clientId: aadClientId
           clientSecretSettingName: 'AAD_CLIENT_SECRET'
+          openIdIssuer: '${environment().authentication.loginEndpoint}${tenant().tenantId}/v2.0'
         }
       }
     }
