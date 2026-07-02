@@ -7,9 +7,9 @@ param environmentName = 'prod'
 param location = 'germanywestcentral'
 param appServicePlanSku = 'B1'
 
-// Set to the real image after the first GitHub Actions build, e.g.
-// ghcr.io/<owner>/study-tracker:latest
-param containerImage = 'ghcr.io/placeholder/study-tracker:latest'
+// Matches the lowercase ghcr.io/<owner>/<repo> image the docker-build-deploy.yml
+// workflow builds and pushes. App Service will retry pulling until CI pushes it.
+param containerImage = 'ghcr.io/lanreadetola/study-tracker:latest'
 
 // GitHub OAuth App / Microsoft Entra App Registration credentials for App Service
 // Authentication (Easy Auth). Pass these at deploy time, e.g.:

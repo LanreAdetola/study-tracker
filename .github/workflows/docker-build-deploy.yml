@@ -60,6 +60,16 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Validate target App Service exists
+        run: |
+          if ! az webapp show \
+              --name "$APP_SERVICE_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "id" -o tsv >/dev/null 2>&1; then
+            echo "::error::App Service '$APP_SERVICE_NAME' not found in resource group '$RESOURCE_GROUP'. Run ./infra/deploy.sh to provision it before this workflow can deploy."
+            exit 1
+          fi
+
       - name: Point App Service at the new image
         run: |
           az webapp config container set \
