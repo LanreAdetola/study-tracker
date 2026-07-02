@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ── Configuration (override via env vars) ─────────────────────────────────
 RESOURCE_GROUP="${RESOURCE_GROUP:-study-tracker-rg}"
-LOCATION="${LOCATION:-eastus}"
+LOCATION="${LOCATION:-germanywestcentral}"
 ENVIRONMENT="${ENVIRONMENT:-prod}"
 DEPLOYMENT_NAME="study-tracker-$(date +%Y%m%d%H%M%S)"
 
