@@ -1,8 +1,27 @@
 using './main.bicep'
 
 param environmentName = 'prod'
+// Tenant policy (sys.regionrestriction) allows: spaincentral, uaenorth, italynorth,
+// germanywestcentral, switzerlandnorth. App Service is available in all of these,
+// so unlike Static Web Apps, everything can now live in a single allowed region.
 param location = 'germanywestcentral'
-// swaLocation must be one of: centralus, eastus2, westus2, westeurope, eastasia
-// None of these are in your subscription's allowed regions — contact Azure support
-// to add 'westeurope', then change this value.
-param swaLocation = 'westeurope'
+param appServicePlanSku = 'B1'
+
+// Set to the real image after the first GitHub Actions build, e.g.
+// ghcr.io/<owner>/study-tracker:latest
+param containerImage = 'ghcr.io/placeholder/study-tracker:latest'
+
+// GitHub OAuth App / Microsoft Entra App Registration credentials for App Service
+// Authentication (Easy Auth). Pass these at deploy time, e.g.:
+//   az deployment group create ... \
+//     --parameters githubClientId=$GITHUB_CLIENT_ID githubClientSecret=$GITHUB_CLIENT_SECRET \
+//     --parameters aadClientId=$AAD_CLIENT_ID aadClientSecret=$AAD_CLIENT_SECRET
+// Do not commit real values here.
+param githubClientId = ''
+param githubClientSecret = ''
+param aadClientId = ''
+param aadClientSecret = ''
+
+// Only needed if the ghcr.io package is kept private.
+param registryUsername = ''
+param registryPassword = ''

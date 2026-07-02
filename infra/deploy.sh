@@ -55,8 +55,8 @@ main() {
     --query "properties.outputs" \
     --output json)
 
-  SWA_URL=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.staticWebAppUrl.value')
-  SWA_TOKEN=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.deploymentToken.value')
+  APP_URL=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.appUrl.value')
+  APP_NAME=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.appServiceName.value')
   COSMOS_NAME=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.cosmosAccountName.value')
 
   ok "Deployment complete."
@@ -65,18 +65,24 @@ main() {
   echo "╔══════════════════════════════════════════════════════════════╗"
   echo "║               Study Tracker — Deployment Summary             ║"
   echo "╠══════════════════════════════════════════════════════════════╣"
-  printf "║  App URL:      %-47s ║\n" "$SWA_URL"
+  printf "║  App URL:      %-47s ║\n" "$APP_URL"
+  printf "║  App Service:  %-47s ║\n" "$APP_NAME"
   printf "║  Cosmos DB:    %-47s ║\n" "$COSMOS_NAME"
   printf "║  Resource Grp: %-47s ║\n" "$RESOURCE_GROUP"
   echo "╚══════════════════════════════════════════════════════════════╝"
   echo ""
-  echo "─── Next step: add the GitHub Actions secret ─────────────────"
+  echo "─── Next steps ────────────────────────────────────────────────"
   echo ""
-  echo "  Secret name:  AZURE_STATIC_WEB_APPS_API_TOKEN"
-  echo "  Secret value: $SWA_TOKEN"
+  echo "  1. Update the GitHub OAuth App and Microsoft Entra App"
+  echo "     Registration redirect URIs to:"
+  echo "       $APP_URL/.auth/login/github/callback"
+  echo "       $APP_URL/.auth/login/aad/callback"
   echo ""
-  echo "  Go to: https://github.com/<owner>/<repo>/settings/secrets/actions"
-  echo "  and add the secret above, then push to main to trigger deployment."
+  echo "  2. GitHub Actions deploys new images automatically via the"
+  echo "     docker-build-deploy.yml workflow on push to main. It reuses"
+  echo "     the existing AZURE_CLIENT_ID / AZURE_TENANT_ID /"
+  echo "     AZURE_SUBSCRIPTION_ID OIDC secrets — no new secrets needed"
+  echo "     unless the ghcr.io package is private."
   echo ""
 }
 

@@ -2,18 +2,16 @@
 
 ![Blazor](https://img.shields.io/badge/Blazor-WASM-512BD4?logo=blazor&logoColor=white)
 ![.NET](https://img.shields.io/badge/.NET-9.0%20%7C%208.0-512BD4?logo=dotnet&logoColor=white)
-![Azure Static Web Apps](https://img.shields.io/badge/Azure-Static%20Web%20Apps-0078D4?logo=microsoftazure&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-App%20Service-2496ED?logo=docker&logoColor=white)
 ![Cosmos DB](https://img.shields.io/badge/Cosmos%20DB-NoSQL-0078D4?logo=microsoftazure&logoColor=white)
 
 > A full-stack study tracking app built on Azure, designed to help users log sessions, set goals, and visualize their progress over time.
-
-**Live app:** [https://kind-sky-0c0b6ea03.3.azurestaticapps.net/](https://kind-sky-0c0b6ea03.3.azurestaticapps.net/)
 
 ## What it does
 
 Study Tracker is a web application that lets users log study sessions, create goals for certifications and subjects, and see how their study habits look over time through charts and KPIs. The idea came from wanting a simple, focused tool to track certification study hours without the overhead of a full project management app.
 
-Users authenticate with GitHub or Microsoft via Azure Static Web Apps' built-in auth. Once logged in, they can log study sessions with a category, hours, date, and optional notes. They can create up to 5 goals (e.g., "AI-300 Machine Learning Operations — 25 hours") and track cumulative progress against each one. The analytics page shows daily study hours as a bar chart, category breakdown as a donut chart, and goal progress as a line chart with target reference lines — all powered by Chart.js via Blazor JS interop.
+Users authenticate with GitHub or Microsoft via Azure App Service's built-in auth ("Easy Auth"). Once logged in, they can log study sessions with a category, hours, date, and optional notes. They can create up to 5 goals (e.g., "AI-300 Machine Learning Operations — 25 hours") and track cumulative progress against each one. The analytics page shows daily study hours as a bar chart, category breakdown as a donut chart, and goal progress as a line chart with target reference lines — all powered by Chart.js via Blazor JS interop.
 
 The dashboard shows four KPI cards at a glance: total sessions, total hours, current study streak (consecutive days), and a weekly comparison with a trend arrow. Completed goals get a green badge and a congratulatory toast notification the moment you log the session that pushes past the target. The whole app is mobile-optimized with a slide-out nav drawer, compact session lists, tab navigation on the goals page, and touch-friendly tap targets.
 
@@ -26,18 +24,14 @@ Browser (Blazor WebAssembly)
     |   Handles routing, UI rendering, Chart.js interop
     |
     v
-Azure Static Web Apps
-    |-- Serves the Blazor WASM static files
-    |-- Handles GitHub/Microsoft OAuth (built-in auth provider)
-    |-- Routes /api/* to the managed Azure Functions backend
-    |-- Creates staging environments for pull requests
-    |
-    v
-Azure Functions v4 (isolated worker, .NET 8.0)
+Azure App Service (single Linux container)
+    |-- ASP.NET Core Minimal API (.NET 8.0) serves the Blazor WASM
+    |   static files and the /api/* endpoints from one process
+    |-- App Service Authentication ("Easy Auth") handles GitHub/
+    |   Microsoft OAuth and injects x-ms-client-principal headers
     |-- REST API: sessions CRUD, goals CRUD, user registration
     |-- Stats endpoint: aggregates sessions into daily breakdown,
     |   category hours, streaks, and weekly comparison
-    |-- Authenticates via x-ms-client-principal-id header from SWA
     |
     v
 Azure Cosmos DB (NoSQL)
@@ -49,22 +43,18 @@ Every API request is scoped to the authenticated user's partition key, so there 
 
 ## Azure services used
 
-- **Azure Static Web Apps** — Hosts the Blazor WASM frontend, manages the Azure Functions API, handles OAuth authentication (GitHub + Microsoft), and automatically provisions staging environments for pull requests
-- **Azure Functions v4** — Serverless API layer running .NET 8.0 in isolated worker mode. Handles all CRUD operations and server-side analytics aggregation
+- **Azure App Service (Linux container)** — Runs a single Docker image containing both the Blazor WASM static files and the ASP.NET Core Minimal API, pulled from ghcr.io. Handles OAuth authentication (GitHub + Microsoft) via built-in App Service Authentication
 - **Azure Cosmos DB** — NoSQL document database with `/userId` as the partition key. Stores sessions, goals, and user profiles. All queries are single-partition reads for performance and cost efficiency
-- **Application Insights** — Monitoring and telemetry for the Azure Functions backend
+- **Application Insights** — Monitoring and telemetry for the API
 
 ## Deployment
 
-The app deploys automatically through a GitHub Actions workflow (`.github/workflows/azure-static-web-apps-kind-sky-0c0b6ea03.yml`). The workflow triggers on:
+The app deploys through a GitHub Actions workflow (`.github/workflows/docker-build-deploy.yml`) that triggers on push to `main`:
 
-- **Push to `main`** — Builds and deploys the Blazor frontend and Azure Functions API to production
-- **Pull request events** (opened, synchronize, reopened) — Deploys to an isolated staging environment for testing
-- **Pull request closed** — Automatically tears down the staging environment
+1. **Build and push** — Builds a single multi-stage Docker image (Blazor client + ASP.NET Core API) and pushes it to `ghcr.io` tagged with both the commit SHA and `latest`.
+2. **Deploy** — Points the Azure App Service container slot at the newly pushed image and restarts the app.
 
-Authentication with Azure uses **OIDC token exchange** — no long-lived credentials stored in GitHub Secrets. The workflow requests an ID token at runtime, which is passed to the `Azure/static-web-apps-deploy@v1` action. The only secret required is `AZURE_STATIC_WEB_APPS_API_TOKEN_KIND_SKY_0C0B6EA03`, which authorizes the deployment.
-
-The SWA deploy action handles the build internally: it compiles the Blazor WASM project from `client/`, the Azure Functions project from `api/`, and deploys both as a single unit.
+Authentication with Azure uses **OIDC token exchange** — no long-lived Azure credentials stored in GitHub Secrets. Pushing to `ghcr.io` uses the built-in `GITHUB_TOKEN`.
 
 ## How to run locally
 
@@ -72,23 +62,15 @@ The SWA deploy action handles the build internally: it compiles the Blazor WASM 
 git clone https://github.com/LanreAdetola/study-tracker.git
 cd study-tracker
 
-# Create API local settings with your Cosmos DB connection
-cat > api/local.settings.json << EOF
-{
-  "IsEncrypted": false,
-  "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "CosmosDBConnectionString": "<your-cosmos-db-connection-string>"
-  }
-}
-EOF
+# Provide your Cosmos DB connection string
+echo "CosmosDBConnectionString=<your-cosmos-db-connection-string>" > .env
 
-# Run both frontend and API together
-swa start http://localhost:5000 --api-location api
+docker compose up --build
 ```
 
-Prerequisites: [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0), [Azure Functions Core Tools v4](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local), and the [SWA CLI](https://github.com/Azure/static-web-apps-cli).
+The app is served at `http://localhost:8080`. App Service Authentication doesn't run locally — simulate a logged-in user by manually sending an `X-MS-CLIENT-PRINCIPAL-ID` header (e.g. via curl or a browser extension) when testing authenticated endpoints.
+
+Prerequisites: [Docker](https://www.docker.com/) (or [.NET 9.0](https://dotnet.microsoft.com/download/dotnet/9.0) + [.NET 8.0](https://dotnet.microsoft.com/download/dotnet/8.0) SDKs to run `client/` and `api/` directly without containers).
 
 ## What I learned
 

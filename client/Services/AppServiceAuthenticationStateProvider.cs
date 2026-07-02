@@ -4,11 +4,11 @@ using System.Security.Claims;
 
 namespace client.Services;
 
-public class AzureStaticWebAppsAuthenticationStateProvider : AuthenticationStateProvider
+public class AppServiceAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly HttpClient _httpClient;
 
-    public AzureStaticWebAppsAuthenticationStateProvider(HttpClient httpClient)
+    public AppServiceAuthenticationStateProvider(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
@@ -17,7 +17,9 @@ public class AzureStaticWebAppsAuthenticationStateProvider : AuthenticationState
     {
         try
         {
-            var userInfo = await _httpClient.GetFromJsonAsync<UserInfo>("/.auth/me");
+            // App Service's own /.auth/me returns a different (token-store) shape than
+            // Azure Static Web Apps did, so the API exposes an SWA-compatible wrapper.
+            var userInfo = await _httpClient.GetFromJsonAsync<UserInfo>("/api/auth/me");
             
             if (userInfo?.ClientPrincipal != null)
             {
