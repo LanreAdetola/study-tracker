@@ -7,6 +7,14 @@ LOCATION="${LOCATION:-germanywestcentral}"
 ENVIRONMENT="${ENVIRONMENT:-prod}"
 DEPLOYMENT_NAME="study-tracker-$(date +%Y%m%d%H%M%S)"
 
+# OAuth credentials for App Service Authentication (Easy Auth). Leave unset to
+# deploy without login working, or export before running to enable it, e.g.:
+#   GITHUB_CLIENT_ID=... GITHUB_CLIENT_SECRET=... ./deploy.sh
+GITHUB_CLIENT_ID="${GITHUB_CLIENT_ID:-}"
+GITHUB_CLIENT_SECRET="${GITHUB_CLIENT_SECRET:-}"
+AAD_CLIENT_ID="${AAD_CLIENT_ID:-}"
+AAD_CLIENT_SECRET="${AAD_CLIENT_SECRET:-}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -52,6 +60,8 @@ main() {
     --template-file "$SCRIPT_DIR/main.bicep" \
     --parameters "$SCRIPT_DIR/main.bicepparam" \
     --parameters environmentName="$ENVIRONMENT" \
+    --parameters githubClientId="$GITHUB_CLIENT_ID" githubClientSecret="$GITHUB_CLIENT_SECRET" \
+    --parameters aadClientId="$AAD_CLIENT_ID" aadClientSecret="$AAD_CLIENT_SECRET" \
     --query "properties.outputs" \
     --output json)
 
