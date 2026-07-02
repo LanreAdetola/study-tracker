@@ -53,13 +53,13 @@
                     <div class="nav-link mb-2">
                         Hello, @authContext.User.Identity?.Name!
                     </div>
-                    <a class="nav-link" href="/.auth/logout">Logout</a>
+                    <a class="nav-link" href="/.auth/logout?post_logout_redirect_uri=/">Logout</a>
                 </Authorized>
                 <NotAuthorized>
-                    <a class="nav-link" href="/.auth/login/github">
+                    <a class="nav-link" href="/.auth/login/github?post_login_redirect_uri=/">
                         <span class="bi bi-github" aria-hidden="true"></span> Login with GitHub
                     </a>
-                    <a class="nav-link" href="/.auth/login/aad">
+                    <a class="nav-link" href="/.auth/login/aad?post_login_redirect_uri=/">
                         <span class="bi bi-microsoft" aria-hidden="true"></span> Login with Microsoft
                     </a>
                 </NotAuthorized>
