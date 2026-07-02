@@ -1,11 +1,35 @@
 @description('Environment name (dev, staging, prod)')
 param environmentName string = 'prod'
 
-@description('Azure region for Cosmos DB and Application Insights')
+@description('Azure region for all resources')
 param location string = resourceGroup().location
 
-@description('Azure region for Static Web Apps (must be an SWA-supported region)')
-param swaLocation string = 'eastus2'
+@description('App Service Plan SKU (Linux)')
+param appServicePlanSku string = 'B1'
+
+@description('Container image to deploy, e.g. ghcr.io/<owner>/study-tracker:latest')
+param containerImage string = 'ghcr.io/placeholder/study-tracker:latest'
+
+@description('GitHub OAuth app client ID (App Service Authentication)')
+param githubClientId string = ''
+
+@description('GitHub OAuth app client secret (App Service Authentication)')
+@secure()
+param githubClientSecret string = ''
+
+@description('Microsoft Entra app registration client ID (App Service Authentication)')
+param aadClientId string = ''
+
+@description('Microsoft Entra app registration client secret (App Service Authentication)')
+@secure()
+param aadClientSecret string = ''
+
+@description('ghcr.io registry username, required only if the container image is private')
+param registryUsername string = ''
+
+@description('ghcr.io registry password/PAT, required only if the container image is private')
+@secure()
+param registryPassword string = ''
 
 var appName = 'study-tracker'
 var prefix = '${appName}-${environmentName}'
@@ -92,33 +116,86 @@ resource usersContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/cont
   }
 }
 
-// ── Azure Static Web App ───────────────────────────────────────────────────
-resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
-  name: '${prefix}-swa'
-  location: swaLocation
+// ── App Service Plan (Linux, container-based) ──────────────────────────────
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
+  name: '${prefix}-plan'
+  location: location
+  kind: 'linux'
   sku: {
-    name: 'Free'
-    tier: 'Free'
+    name: appServicePlanSku
   }
-  properties: {}
+  properties: {
+    reserved: true
+  }
 }
 
-// ── Static Web App — API environment variables ─────────────────────────────
-resource swaAppSettings 'Microsoft.Web/staticSites/config@2023-01-01' = {
-  parent: staticWebApp
-  name: 'appsettings'
+var hasRegistryCredentials = !empty(registryUsername) && !empty(registryPassword)
+
+// ── App Service (Web App for Containers) ───────────────────────────────────
+resource webApp 'Microsoft.Web/sites@2023-12-01' = {
+  name: '${prefix}-app'
+  location: location
+  kind: 'app,linux,container'
   properties: {
+    serverFarmId: appServicePlan.id
+    httpsOnly: true
+    siteConfig: {
+      linuxFxVersion: 'DOCKER|${containerImage}'
+    }
+  }
+}
+
+// ── App Service — application settings (Cosmos config, OAuth secrets, registry creds) ──
+resource webAppSettings 'Microsoft.Web/sites/config@2023-12-01' = {
+  parent: webApp
+  name: 'appsettings'
+  properties: union({
+    WEBSITES_PORT: '8080'
     CosmosDBConnectionString: cosmosAccount.listConnectionStrings().connectionStrings[0].connectionString
     CosmosDBDatabaseName: 'study-tracker'
-    CosmosDBContainerName: 'sessions'
+    GITHUB_CLIENT_SECRET: githubClientSecret
+    AAD_CLIENT_SECRET: aadClientSecret
+  }, hasRegistryCredentials ? {
+    DOCKER_REGISTRY_SERVER_URL: 'https://ghcr.io'
+    DOCKER_REGISTRY_SERVER_USERNAME: registryUsername
+    DOCKER_REGISTRY_SERVER_PASSWORD: registryPassword
+  } : {})
+}
+
+// ── App Service Authentication (Easy Auth v2) ──────────────────────────────
+resource authSettings 'Microsoft.Web/sites/config@2023-12-01' = {
+  parent: webApp
+  name: 'authsettingsV2'
+  properties: {
+    platform: {
+      enabled: true
+    }
+    globalValidation: {
+      unauthenticatedClientAction: 'AllowAnonymous'
+    }
+    identityProviders: {
+      gitHub: {
+        enabled: !empty(githubClientId)
+        registration: {
+          clientId: githubClientId
+          clientSecretSettingName: 'GITHUB_CLIENT_SECRET'
+        }
+      }
+      azureActiveDirectory: {
+        enabled: !empty(aadClientId)
+        registration: {
+          clientId: aadClientId
+          clientSecretSettingName: 'AAD_CLIENT_SECRET'
+        }
+      }
+    }
   }
+  dependsOn: [
+    webAppSettings
+  ]
 }
 
 // ── Outputs ────────────────────────────────────────────────────────────────
-output staticWebAppUrl string = 'https://${staticWebApp.properties.defaultHostname}'
-
-@description('Add this as the AZURE_STATIC_WEB_APPS_API_TOKEN GitHub Actions secret')
-@secure()
-output deploymentToken string = staticWebApp.listSecrets().properties.apiKey
-
+output appUrl string = 'https://${webApp.properties.defaultHostName}'
 output cosmosAccountName string = cosmosAccount.name
+output appServiceName string = webApp.name

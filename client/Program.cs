@@ -14,8 +14,8 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 // Add authorization services
 builder.Services.AddAuthorizationCore();
 
-// Add Azure Static Web Apps authentication state provider
-builder.Services.AddScoped<AuthenticationStateProvider, AzureStaticWebAppsAuthenticationStateProvider>();
+// Add App Service authentication state provider
+builder.Services.AddScoped<AuthenticationStateProvider, AppServiceAuthenticationStateProvider>();
 
 builder.Services.AddSingleton<ToastService>();
 builder.Services.AddScoped<StudySessionService>();
