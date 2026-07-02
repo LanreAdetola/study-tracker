@@ -5,7 +5,7 @@ param environmentName string = 'prod'
 param location string = resourceGroup().location
 
 @description('App Service Plan SKU (Linux)')
-param appServicePlanSku string = 'B1'
+param appServicePlanSku string = 'F1'
 
 @description('Container image to deploy, e.g. ghcr.io/<owner>/study-tracker:latest')
 param containerImage string = 'ghcr.io/placeholder/study-tracker:latest'
@@ -34,22 +34,23 @@ param registryPassword string = ''
 var appName = 'study-tracker'
 var prefix = '${appName}-${environmentName}'
 
-// ── Cosmos DB Account (Serverless) ─────────────────────────────────────────
+// ── Cosmos DB Account (Free Tier — 1000 RU/s + 25 GB storage, forever free) ─
+// Free tier and serverless are mutually exclusive, and capacity mode can't be
+// changed after account creation, so this account must be provisioned
+// throughput (not serverless) with enableFreeTier set at create time.
 resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-11-15' = {
   name: '${prefix}-cosmos'
   location: location
   kind: 'GlobalDocumentDB'
   properties: {
     databaseAccountOfferType: 'Standard'
+    enableFreeTier: true
     locations: [
       {
         locationName: location
         failoverPriority: 0
         isZoneRedundant: false
       }
-    ]
-    capabilities: [
-      { name: 'EnableServerless' }
     ]
     consistencyPolicy: {
       defaultConsistencyLevel: 'Session'
@@ -58,12 +59,15 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-11-15' = {
   }
 }
 
-// ── Cosmos DB Database ─────────────────────────────────────────────────────
+// ── Cosmos DB Database (shared throughput — all containers draw from this pool) ─
 resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-11-15' = {
   parent: cosmosAccount
   name: 'study-tracker'
   properties: {
     resource: { id: 'study-tracker' }
+    options: {
+      throughput: 1000
+    }
   }
 }
 

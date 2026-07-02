@@ -1,10 +1,10 @@
 @page "/"
 @using client.Models
 @using client.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject StudySessionService SessionService
 @inject StudyGoalService GoalService
 @inject UserService UserService
-@inject AuthenticationStateProvider AuthStateProvider
 
 <AuthorizeView>
     <Authorized>
@@ -149,6 +149,9 @@
 </AuthorizeView>
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+
     private string userName = "User";
     private StudySessionStats? stats;
     private List<StudyGoal>? activeGoals;
@@ -156,7 +159,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var authState = await AuthenticationStateTask;
         var user = authState.User;
 
         if (user.Identity?.IsAuthenticated ?? false)
