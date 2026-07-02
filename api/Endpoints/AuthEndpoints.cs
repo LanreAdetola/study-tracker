@@ -17,17 +17,44 @@ public static class AuthEndpoints
     private static IResult GetCurrentPrincipal(HttpContext context)
     {
         var principal = context.GetClientPrincipal();
+        var headerUserId = context.GetUserId();
 
-        AuthMeClientPrincipal? result = principal == null
-            ? null
-            : new AuthMeClientPrincipal
-            {
-                IdentityProvider = principal.IdentityProvider ?? "",
-                UserId = principal.UserId ?? "",
-                UserDetails = principal.UserDetails ?? "",
-                Claims = (principal.Claims ?? Enumerable.Empty<ClientPrincipalClaim>())
-                    .Select(c => new AuthMeClaim { Type = c.Type ?? "", Value = c.Value ?? "" })
-            };
+        if (principal == null && string.IsNullOrEmpty(headerUserId))
+        {
+            return Results.Ok(new AuthMeResponse { ClientPrincipal = null });
+        }
+
+        var claims = (principal?.Claims ?? Enumerable.Empty<ClientPrincipalClaim>()).ToList();
+
+        // Azure App Service's real X-MS-CLIENT-PRINCIPAL only reliably populates the
+        // claims array — identityProvider/userId/userDetails often come back empty.
+        // An empty identityProvider is fatal client-side: ClaimsIdentity treats an
+        // empty authenticationType as NOT authenticated. Always fall back to a
+        // non-empty value derived from claims (or the simple id header) instead.
+        var identityProvider = !string.IsNullOrEmpty(principal?.IdentityProvider)
+            ? principal!.IdentityProvider!
+            : claims.Any(c => c.Type == "http://schemas.microsoft.com/identity/claims/tenantid") ? "aad" : "appservice";
+
+        var userId = !string.IsNullOrEmpty(principal?.UserId)
+            ? principal!.UserId!
+            : headerUserId
+                ?? claims.FirstOrDefault(c => c.Type is "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier" or "sub")?.Value
+                ?? "";
+
+        var userDetails = !string.IsNullOrEmpty(principal?.UserDetails)
+            ? principal!.UserDetails!
+            : claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
+                ?? claims.FirstOrDefault(c => c.Type == "name")?.Value
+                ?? claims.FirstOrDefault(c => c.Type == "login")?.Value
+                ?? "";
+
+        var result = new AuthMeClientPrincipal
+        {
+            IdentityProvider = identityProvider,
+            UserId = userId,
+            UserDetails = userDetails,
+            Claims = claims.Select(c => new AuthMeClaim { Type = c.Type ?? "", Value = c.Value ?? "" })
+        };
 
         return Results.Ok(new AuthMeResponse { ClientPrincipal = result });
     }
