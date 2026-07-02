@@ -5,7 +5,9 @@ param environmentName = 'prod'
 // germanywestcentral, switzerlandnorth. App Service is available in all of these,
 // so unlike Static Web Apps, everything can now live in a single allowed region.
 param location = 'germanywestcentral'
-param appServicePlanSku = 'B1'
+// Subscription quota for B1 (Basic) VMs is 0 on this Azure for Students
+// subscription, so F1 (Free) is what's actually available, not just cheaper.
+param appServicePlanSku = 'F1'
 
 // Matches the lowercase ghcr.io/<owner>/<repo> image the docker-build-deploy.yml
 // workflow builds and pushes. App Service will retry pulling until CI pushes it.
