@@ -8,13 +8,16 @@ ENVIRONMENT="${ENVIRONMENT:-prod}"
 DEPLOYMENT_NAME="study-tracker-$(date +%Y%m%d%H%M%S)"
 
 # OAuth credentials for App Service Authentication (Easy Auth). Leave unset to
-# deploy without login working, or export before running to enable it, e.g.:
+# reuse whatever is already configured on the App Service (see
+# load_existing_oauth_config below), or export before running to add/change a
+# provider, e.g.:
 #   GITHUB_CLIENT_ID=... GITHUB_CLIENT_SECRET=... ./deploy.sh
 GITHUB_CLIENT_ID="${GITHUB_CLIENT_ID:-}"
 GITHUB_CLIENT_SECRET="${GITHUB_CLIENT_SECRET:-}"
 AAD_CLIENT_ID="${AAD_CLIENT_ID:-}"
 AAD_CLIENT_SECRET="${AAD_CLIENT_SECRET:-}"
 
+APP_NAME="study-tracker-${ENVIRONMENT}-app"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -35,6 +38,41 @@ check_prereqs() {
   [[ $missing -eq 0 ]] || { err "Install missing tools and retry."; exit 1; }
 }
 
+# ── Preserve OAuth config across partial re-deploys ─────────────────────────
+# Bicep deployments replace the full app settings/auth config each run, so a
+# deploy that only sets one provider's env vars would otherwise blank out any
+# other provider already configured. Fill in unset env vars from what's
+# currently live on the App Service instead of leaving them empty.
+load_existing_oauth_config() {
+  if ! az webapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+    return 0
+  fi
+
+  log "App Service already exists — checking for OAuth config to preserve..."
+
+  local existing_github_id existing_aad_id
+  existing_github_id=$(az webapp auth show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "gitHubClientId" -o tsv 2>/dev/null || echo "")
+  existing_aad_id=$(az webapp auth show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query "clientId" -o tsv 2>/dev/null || echo "")
+
+  local existing_settings
+  existing_settings=$(az webapp config appsettings list --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" -o json 2>/dev/null || echo "[]")
+  local existing_github_secret existing_aad_secret
+  existing_github_secret=$(echo "$existing_settings" | jq -r '.[] | select(.name=="GITHUB_CLIENT_SECRET") | .value // ""')
+  existing_aad_secret=$(echo "$existing_settings" | jq -r '.[] | select(.name=="AAD_CLIENT_SECRET") | .value // ""')
+
+  if [[ -z "$GITHUB_CLIENT_ID" && -n "$existing_github_id" ]]; then
+    warn "GITHUB_CLIENT_ID not set — reusing existing value ($existing_github_id) so GitHub login isn't lost."
+    GITHUB_CLIENT_ID="$existing_github_id"
+    GITHUB_CLIENT_SECRET="${GITHUB_CLIENT_SECRET:-$existing_github_secret}"
+  fi
+
+  if [[ -z "$AAD_CLIENT_ID" && -n "$existing_aad_id" ]]; then
+    warn "AAD_CLIENT_ID not set — reusing existing value ($existing_aad_id) so Microsoft login isn't lost."
+    AAD_CLIENT_ID="$existing_aad_id"
+    AAD_CLIENT_SECRET="${AAD_CLIENT_SECRET:-$existing_aad_secret}"
+  fi
+}
+
 # ── Main ───────────────────────────────────────────────────────────────────
 main() {
   check_prereqs
@@ -45,6 +83,8 @@ main() {
     az login
   fi
   ok "Logged in as: $(az account show --query user.name -o tsv)"
+
+  load_existing_oauth_config
 
   log "Creating resource group: $RESOURCE_GROUP (location: $LOCATION)"
   az group create \
